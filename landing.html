@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PBOS — Personal Brand Operating System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="db.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#0a0a0a;--white:#f5f2eb;--accent:#c8ff57;--muted:#6b6b6b;--border:#2a2a2a;--card:#141414;--input:#1e1e1e;--error:#ff5757;--success:#57ff9a}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+nav{display:flex;justify-content:space-between;align-items:center;padding:1.5rem 3rem;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;letter-spacing:-.02em;color:var(--white);text-decoration:none}
+.logo span{color:var(--accent)}
+.nav-btn{background:transparent;border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.85rem;padding:.5rem 1.2rem;border-radius:100px;cursor:pointer;transition:all .2s}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.hero{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:5rem 3rem 2rem;max-width:860px}
+.tag{display:inline-block;background:#1a1a1a;border:1px solid var(--border);color:var(--muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:.32rem .85rem;border-radius:100px;margin-bottom:1.8rem}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.8rem,6.5vw,5rem);line-height:1.0;letter-spacing:-.03em;margin-bottom:1.4rem}
+h1 em{color:var(--accent);font-style:normal}
+.sub{font-size:1.05rem;color:var(--muted);font-weight:300;max-width:500px;line-height:1.65;margin-bottom:2.6rem}
+.cta-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-primary{background:var(--accent);color:var(--black);font-family:'DM Sans',sans-serif;font-weight:600;font-size:.93rem;padding:.82rem 1.9rem;border:none;border-radius:100px;cursor:pointer;transition:transform .15s,opacity .15s}
+.btn-primary:hover{transform:scale(1.03);opacity:.9}
+.btn-ghost{background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.88rem;border:none;cursor:pointer;display:flex;align-items:center;gap:.35rem;transition:color .2s;padding:0}
+.btn-ghost:hover{color:var(--white)}
+
+.features{display:flex;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.feat{flex:1;padding:1.4rem 1.8rem;border-right:1px solid var(--border);font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:.55rem}
+.feat:last-child{border-right:none}
+.feat-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:100;justify-content:center;align-items:center}
+.overlay.active{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.4rem;width:100%;max-width:410px;position:relative;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-close{position:absolute;top:1.1rem;right:1.1rem;background:transparent;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color .2s;line-height:1}
+.modal-close:hover{color:var(--white)}
+.modal-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:.88rem;margin-bottom:1.6rem}
+.modal-logo span{color:var(--accent)}
+
+.tabs{display:flex;background:#1a1a1a;border-radius:9px;padding:3px;margin-bottom:1.6rem;gap:3px}
+.tab{flex:1;padding:.52rem;border:none;border-radius:7px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--card);color:var(--white);border:1px solid var(--border)}
+
+.modal h2{font-family:'Syne',sans-serif;font-weight:700;font-size:1.5rem;margin-bottom:.35rem;letter-spacing:-.02em}
+.modal-sub{color:var(--muted);font-size:.83rem;margin-bottom:1.8rem}
+.form-group{margin-bottom:.9rem}
+label{display:block;font-size:.76rem;color:var(--muted);margin-bottom:.38rem;letter-spacing:.02em}
+input[type=text],input[type=email],input[type=password]{width:100%;background:var(--input);border:1px solid var(--border);border-radius:9px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:.88rem;padding:.72rem .95rem;outline:none;transition:border-color .2s}
+input:focus{border-color:var(--accent)}
+input::placeholder{color:#444}
+
+.msg{font-size:.78rem;margin-bottom:.9rem;padding:.55rem .85rem;border-radius:8px;display:none}
+.msg.error{background:rgba(255,87,87,.1);color:var(--error);border:1px solid rgba(255,87,87,.22);display:block}
+.msg.success{background:rgba(87,255,154,.08);color:var(--success);border:1px solid rgba(87,255,154,.18);display:block}
+
+.btn-submit{width:100%;background:var(--accent);color:var(--black);font-family:'DM Sans',sans-serif;font-weight:600;font-size:.93rem;padding:.82rem;border:none;border-radius:9px;cursor:pointer;transition:opacity .2s,transform .15s;margin-top:.4rem}
+.btn-submit:hover{opacity:.88;transform:scale(1.01)}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">PB<span>OS</span></span>
+  <button class="nav-btn" onclick="openModal('login')">Log In</button>
+</nav>
+
+<section class="hero">
+  <span class="tag">Personal Brand Operating System</span>
+  <h1>One platform.<br><em>Every tool</em><br>you need.</h1>
+  <p class="sub">Manage your content, brand deals, analytics, and tasks across Instagram, TikTok, and Facebook — all in one place.</p>
+  <div class="cta-row">
+    <button class="btn-primary" onclick="openModal('signup')">Get started free</button>
+    <button class="btn-ghost" onclick="openModal('login')">Log in <span>→</span></button>
+  </div>
+</section>
+
+<div class="features">
+  <div class="feat"><span class="feat-dot"></span>Content Planner</div>
+  <div class="feat"><span class="feat-dot"></span>Analytics Dashboard</div>
+  <div class="feat"><span class="feat-dot"></span>Brand Deal Tracker</div>
+  <div class="feat"><span class="feat-dot"></span>Task Management</div>
+  <div class="feat"><span class="feat-dot"></span>Social Media Hub</div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeOnBg(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo">PB<span>OS</span></div>
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="switchTab('login')">Log in</button>
+      <button class="tab" id="tab-signup" onclick="switchTab('signup')">Create account</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <h2>Welcome back</h2>
+      <p class="modal-sub">Sign in to your PBOS workspace.</p>
+      <div id="login-msg" class="msg"></div>
+      <div class="form-group"><label>Email address</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"/></div>
+      <button class="btn-submit" onclick="handleLogin()">Log in</button>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="form-signup" style="display:none">
+      <h2>Create account</h2>
+      <p class="modal-sub">Set up your PBOS workspace. It's free.</p>
+      <div id="signup-msg" class="msg"></div>
+      <div class="form-group"><label>Full name</label><input type="text" id="signup-name" placeholder="Your name"/></div>
+      <div class="form-group"><label>Email address</label><input type="email" id="signup-email" placeholder="you@example.com"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="signup-pass" placeholder="At least 6 characters" onkeydown="if(event.key==='Enter')handleSignup()"/></div>
+      <button class="btn-submit" onclick="handleSignup()">Create account</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Redirect if already logged in
+  if (DB.session.get()) window.location.href = 'index.html';
+
+  function openModal(tab) {
+    document.getElementById('overlay').classList.add('active');
+    switchTab(tab || 'login');
+  }
+  function closeModal() { document.getElementById('overlay').classList.remove('active'); }
+  function closeOnBg(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+
+  function switchTab(tab) {
+    document.getElementById('form-login').style.display  = tab === 'login'  ? 'block' : 'none';
+    document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('tab-login').classList.toggle('active',  tab === 'login');
+    document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+    ['login-msg','signup-msg'].forEach(id => {
+      const el = document.getElementById(id);
+      el.className = 'msg'; el.textContent = '';
+    });
+  }
+
+  function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = 'msg ' + type;
+    el.textContent = text;
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-pass').value;
+    if (!email || !pass) { showMsg('login-msg','error','Please fill in all fields.'); return; }
+
+    showMsg('login-msg','success','Checking your details…');
+    const result = await DB.users.verify(email, pass);
+
+    if (!result.ok) { showMsg('login-msg','error', result.error); return; }
+    DB.session.set(result.user);
+    DB.activity.log('system', `${result.user.name} logged in.`);
+    showMsg('login-msg','success','Logging you in…');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  }
+
+  async function handleSignup() {
+    const name  = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const pass  = document.getElementById('signup-pass').value;
+    if (!name || !email || !pass) { showMsg('signup-msg','error','Please fill in all fields.'); return; }
+    if (pass.length < 6)          { showMsg('signup-msg','error','Password must be at least 6 characters.'); return; }
+    if (!email.includes('@'))     { showMsg('signup-msg','error','Enter a valid email address.'); return; }
+
+    showMsg('signup-msg','success','Creating your account…');
+    const result = await DB.users.create(name, email, pass);
+
+    if (!result.ok) { showMsg('signup-msg','error', result.error); return; }
+    const user = result.user || { email, name };
+    DB.session.set(user);
+    DB.activity.log('system', `Welcome to PBOS, ${name}! Your workspace is ready.`);
+    showMsg('signup-msg','success','Account created! Setting up your workspace…');
+    setTimeout(() => window.location.href = 'index.html', 900);
+  }
+</script>
+</body>
+</html>

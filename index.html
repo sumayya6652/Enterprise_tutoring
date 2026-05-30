@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PBOS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="db.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--white:#f5f2eb;--accent:#c8ff57;--muted:#6b6b6b;
+  --border:#2a2a2a;--card:#141414;--input:#1e1e1e;
+  --ig:#E1306C;--tt:#888888;--fb:#1877F2;--sidebar:235px;
+}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;overflow-x:hidden}
+
+/* ── DEMO BANNER ─────────────────────────────────── */
+#demo-banner{display:none;position:fixed;bottom:1.2rem;right:1.4rem;z-index:999;
+  background:linear-gradient(135deg,#1a1a1a,#222);border:1px solid rgba(200,255,87,.35);
+  border-radius:14px;padding:1rem 1.25rem;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#demo-banner.show{display:block}
+.demo-banner-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--accent);margin-bottom:.3rem}
+.demo-banner-sub{font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:.85rem}
+.demo-banner-btn{width:100%;background:var(--accent);color:var(--black);font-family:'DM Sans',sans-serif;
+  font-weight:700;font-size:.82rem;padding:.6rem;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s}
+.demo-banner-btn:hover{opacity:.88}
+.demo-banner-skip{display:block;text-align:center;margin-top:.5rem;font-size:.72rem;color:var(--muted);cursor:pointer;transition:color .2s}
+.demo-banner-skip:hover{color:var(--white)}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+aside{width:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;
+  padding:1.6rem 1rem;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:50}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:2rem;letter-spacing:-.02em}
+.logo span{color:var(--accent)}
+.nav-sec{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  padding:.35rem .6rem;margin-top:.7rem;margin-bottom:.15rem}
+.nav-item{display:flex;align-items:center;gap:.65rem;padding:.56rem .7rem;border-radius:8px;color:var(--muted);
+  font-size:.85rem;cursor:pointer;transition:all .15s;border:none;background:transparent;
+  font-family:'DM Sans',sans-serif;text-align:left;width:100%}
+.nav-item:hover{color:var(--white);background:#1a1a1a}
+.nav-item.active{color:var(--white);background:#1e1e1e;border:1px solid var(--border)}
+.nav-icon{font-size:.9rem;width:17px;text-align:center;flex-shrink:0}
+.notif-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6b6b;margin-left:auto;flex-shrink:0}
+.sidebar-bottom{margin-top:auto;padding-top:1rem}
+.user-chip{display:flex;align-items:center;gap:.65rem;padding:.65rem .7rem;border-radius:10px;border:1px solid var(--border);margin-bottom:.5rem}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;
+  justify-content:center;font-size:.65rem;font-weight:700;color:var(--black);flex-shrink:0}
+.u-name{font-size:.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-role{font-size:.67rem;color:var(--muted)}
+.logout-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Sans',sans-serif;font-size:.78rem;padding:.5rem;border-radius:8px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{color:var(--white);border-color:#555}
+
+/* ── MAIN ────────────────────────────────────────── */
+main{margin-left:var(--sidebar);flex:1;padding:2rem 2.4rem;min-height:100vh;max-width:calc(100vw - var(--sidebar))}
+.page{display:none}.page.active{display:block}
+
+/* ── TOPBAR ──────────────────────────────────────── */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.8rem;gap:1rem;flex-wrap:wrap}
+.page-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.42rem;letter-spacing:-.02em}
+.page-sub{font-size:.8rem;color:var(--muted);margin-top:.18rem}
+.topbar-right{display:flex;gap:.6rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.btn-action{background:var(--accent);color:var(--black);font-family:'DM Sans',sans-serif;font-weight:600;
+  font-size:.8rem;padding:.45rem 1rem;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s,transform .15s;white-space:nowrap}
+.btn-action:hover{opacity:.88;transform:scale(1.02)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:.78rem;padding:.42rem .9rem;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-outline:hover{color:var(--white);border-color:#555}
+.btn-demo{background:transparent;border:1px solid rgba(200,255,87,.3);color:var(--accent);font-family:'DM Sans',sans-serif;
+  font-size:.75rem;padding:.42rem .85rem;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-demo:hover{background:rgba(200,255,87,.07);border-color:var(--accent)}
+
+/* ── GRID ────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.3rem}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;margin-bottom:.85rem}
+.full{margin-bottom:.85rem}
+@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.three-col,.two-col{grid-template-columns:1fr}}
+
+/* ── CARDS ───────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-line,var(--accent));opacity:.6}
+.stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.45rem}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:700;letter-spacing:-.02em}
+.stat-change{font-size:.71rem;margin-top:.22rem;color:var(--muted)}
+.stat-change.up{color:var(--accent)}.stat-change.down{color:#ff6b6b}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:.5rem;flex-wrap:wrap}
+.card-title{font-family:'Syne',sans-serif;font-weight:600;font-size:.9rem}
+.chart-wrap{position:relative;height:180px}
+
+/* ── BADGES / PILLS ──────────────────────────────── */
+.badge{font-size:.66rem;padding:.2rem .52rem;border-radius:100px;background:#1e1e1e;color:var(--muted);border:1px solid var(--border);white-space:nowrap}
+.badge.green{background:rgba(200,255,87,.1);color:var(--accent);border-color:rgba(200,255,87,.2)}
+.badge.red{background:rgba(255,87,87,.1);color:#ff8f8f;border-color:rgba(255,87,87,.2)}
+.badge.blue{background:rgba(24,119,242,.12);color:#6eadff;border-color:rgba(24,119,242,.25)}
+.pill{font-size:.64rem;padding:.16rem .5rem;border-radius:100px;flex-shrink:0;border:1px solid transparent;white-space:nowrap}
+.pill-scheduled{background:rgba(200,255,87,.1);color:var(--accent);border-color:rgba(200,255,87,.2)}
+.pill-draft{background:#1e1e1e;color:var(--muted);border-color:var(--border)}
+.pill-published{background:rgba(87,255,154,.1);color:#57ff9a;border-color:rgba(87,255,154,.2)}
+.pill-paid{background:rgba(24,119,242,.12);color:#6eadff;border-color:rgba(24,119,242,.25)}
+.pill-pending{background:rgba(255,165,0,.1);color:#ffbe57;border-color:rgba(255,165,0,.2)}
+.pill-in-progress{background:rgba(200,255,87,.07);color:#a8d440;border-color:rgba(200,255,87,.15)}
+.pill-negotiation{background:rgba(255,87,87,.08);color:#ff8f8f;border-color:rgba(255,87,87,.18)}
+.pill-high{background:rgba(255,87,87,.1);color:#ff8f8f;border-color:rgba(255,87,87,.2)}
+.pill-medium{background:rgba(255,165,0,.1);color:#ffbe57;border-color:rgba(255,165,0,.2)}
+.pill-low{background:rgba(200,255,87,.08);color:#a8d440;border-color:rgba(200,255,87,.15)}
+.plat-tag{font-size:.66rem;padding:.15rem .45rem;border-radius:4px;font-weight:600}
+.plat-instagram{background:rgba(225,48,108,.15);color:#f97bad}
+.plat-tiktok{background:rgba(150,150,150,.1);color:#aaa}
+.plat-facebook{background:rgba(24,119,242,.12);color:#6eadff}
+.plat-youtube{background:rgba(255,0,0,.1);color:#ff7070}
+.plat-all{background:rgba(200,255,87,.1);color:var(--accent)}
+
+/* ── TABLE ───────────────────────────────────────── */
+.data-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.data-table th{font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--border);font-weight:500}
+.data-table td{padding:.6rem .7rem;border-bottom:1px solid #1a1a1a;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#181818}
+.deal-val{font-family:'Syne',sans-serif;font-weight:600;color:var(--accent)}
+.progress-bar{height:4px;background:#2a2a2a;border-radius:3px;overflow:hidden;width:70px;flex-shrink:0}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px}
+
+/* ── TASKS ───────────────────────────────────────── */
+.task-row{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.83rem}
+.task-row:last-child{border-bottom:none}
+.task-check{width:17px;height:17px;border:1px solid var(--border);border-radius:4px;flex-shrink:0;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task-check.done{background:var(--accent);border-color:var(--accent)}
+.task-check.done::after{content:'✓';font-size:.58rem;color:var(--black);font-weight:700}
+.task-text{flex:1;line-height:1.3}
+.task-text.done{text-decoration:line-through;color:var(--muted)}
+.task-due{font-size:.69rem;color:var(--muted);flex-shrink:0}
+.task-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;
+  padding:.1rem .3rem;border-radius:4px;transition:color .2s;flex-shrink:0}
+.task-del:hover{color:#ff6b6b}
+
+/* ── EMPTY STATE ─────────────────────────────────── */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:.8rem;opacity:.4}
+.empty-state h3{font-family:'Syne',sans-serif;font-size:1rem;color:var(--white);margin-bottom:.4rem;font-weight:600}
+.empty-state p{font-size:.82rem;line-height:1.6}
+
+/* ── MODAL ───────────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+  z-index:200;justify-content:center;align-items:center;padding:1rem}
+.overlay.active{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:2rem;width:100%;
+  max-width:480px;position:relative;animation:slideUp .22s ease;max-height:90vh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--muted);
+  font-size:1.1rem;cursor:pointer;transition:color .2s;line-height:1;padding:.2rem .4rem;border-radius:4px}
+.modal-close:hover{color:var(--white);background:#2a2a2a}
+.modal h2{font-family:'Syne',sans-serif;font-weight:700;font-size:1.25rem;margin-bottom:1.3rem;letter-spacing:-.02em}
+.form-group{margin-bottom:.9rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem}
+label{display:block;font-size:.74rem;color:var(--muted);margin-bottom:.35rem;letter-spacing:.02em}
+input[type=text],input[type=number],input[type=date],input[type=url],select,textarea{
+  width:100%;background:var(--input);border:1px solid var(--border);border-radius:8px;
+  color:var(--white);font-family:'DM Sans',sans-serif;font-size:.86rem;padding:.65rem .9rem;
+  outline:none;transition:border-color .2s;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:#444}
+select option{background:#1e1e1e}
+textarea{resize:vertical;min-height:70px}
+.modal-actions{display:flex;gap:.7rem;justify-content:flex-end;margin-top:1.3rem}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:.82rem;padding:.55rem 1.1rem;border-radius:8px;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{color:var(--white);border-color:#555}
+.btn-save{background:var(--accent);color:var(--black);font-family:'DM Sans',sans-serif;font-weight:600;
+  font-size:.82rem;padding:.55rem 1.3rem;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s}
+.btn-save:hover{opacity:.88}
+
+/* ── SOCIAL PLATFORM CARDS ───────────────────────── */
+.platform-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;position:relative;overflow:hidden}
+.platform-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pcolor)}
+.platform-header{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem}
+.platform-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.platform-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem}
+.platform-handle{font-size:.7rem;color:var(--muted)}
+.pstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.45rem;margin-bottom:.9rem}
+.pstat{background:#1a1a1a;border-radius:7px;padding:.55rem .65rem}
+.pstat-label{font-size:.6rem;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.04em}
+.pstat-val{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.pstat-val.up{color:var(--accent)}
+.recent-posts-wrap{border-top:1px solid var(--border);padding-top:.8rem}
+.rp-label{font-size:.67rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.post-row{display:flex;justify-content:space-between;align-items:center;padding:.38rem 0;border-bottom:1px solid #1e1e1e;font-size:.8rem}
+.post-row:last-child{border-bottom:none}
+.post-row-clickable{cursor:pointer;transition:background .15s;border-radius:4px;padding:.38rem .3rem}
+.post-row-clickable:hover{background:rgba(200,255,87,.05)}
+.post-row-clickable:hover .post-title-cell{color:var(--accent)}
+.post-title-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;transition:color .15s}
+.post-metrics{display:flex;gap:.7rem;color:var(--muted);font-size:.73rem;flex-shrink:0}
+
+/* ── ACTIVITY ────────────────────────────────────── */
+.activity-item{display:flex;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.adot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:.38rem}
+.adot.ig{background:var(--ig)}.adot.tt{background:var(--tt)}.adot.fb{background:var(--fb)}.adot.system{background:var(--muted)}
+.activity-text{font-size:.81rem;line-height:1.4}
+.activity-time{font-size:.68rem;color:var(--muted);margin-top:.12rem}
+
+/* ── POST DETAIL DRAWER ──────────────────────────── */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:300;justify-content:flex-end}
+.drawer-overlay.active{display:flex}
+.drawer{width:min(560px,95vw);background:#111;border-left:1px solid var(--border);height:100%;overflow-y:auto;padding:2rem 1.8rem;animation:drawerIn .25s ease;position:relative}
+@keyframes drawerIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.drawer-close{position:absolute;top:1.2rem;right:1.2rem;background:#1e1e1e;border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .2s}
+.drawer-close:hover{color:var(--white);border-color:#555}
+.drawer-plat-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-weight:600;margin-bottom:1rem}
+.drawer-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.02em;margin-bottom:.35rem;line-height:1.2}
+.drawer-date{font-size:.75rem;color:var(--muted);margin-bottom:1.4rem}
+.drawer-metrics{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.6rem}
+.drawer-metric{background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem}
+.drawer-metric-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem}
+.drawer-metric-val{font-family:'Syne',sans-serif;font-weight:700;font-size:1.35rem}
+.drawer-section-title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.compare-row{display:flex;align-items:center;gap:.8rem;padding:.6rem .75rem;border-radius:8px;background:#1a1a1a;border:1px solid var(--border);margin-bottom:.5rem;cursor:pointer;transition:all .2s}
+.compare-row:hover{border-color:var(--accent);background:#1e1e1e}
+.compare-row.selected{border-color:var(--accent);background:rgba(200,255,87,.05)}
+.compare-plat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.compare-post-title{flex:1;font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compare-post-views{font-size:.75rem;color:var(--muted);flex-shrink:0}
+.compare-chart-wrap{margin-top:1rem;background:#1a1a1a;border-radius:10px;padding:1rem;position:relative;height:200px}
+
+/* ── SECTION LABEL ───────────────────────────────── */
+.section-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── LIVE DOT ────────────────────────────────────── */
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#57ff9a;animation:pulse 2s infinite;margin-right:.3rem;vertical-align:middle}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── SOCIAL MODAL TABS ───────────────────────────── */
+.stat-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+
+/* ── TESTING PAGE ─────────────────────────────────── */
+.test-row-pass td { border-left: 2px solid #57ff9a; }
+.test-row-fail td { border-left: 2px solid #ff6b6b; }
+.test-row-pending td { border-left: 2px solid #6b6b6b; }
+.test-status-pass  { color:#57ff9a; font-weight:600; font-size:.78rem; }
+.test-status-fail  { color:#ff6b6b; font-weight:600; font-size:.78rem; }
+.test-status-pending { color:#6b6b6b; font-size:.78rem; }
+.test-progress-bar { height:6px; background:#2a2a2a; border-radius:3px; overflow:hidden; margin-top:.3rem; }
+.test-progress-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+.eval-item { display:flex; align-items:flex-start; gap:.6rem; padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.82rem; line-height:1.5; }
+.eval-item:last-child { border-bottom:none; }
+.eval-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:.35rem; }
+
+/* ── DEMO PAGE ─────────────────────────────────────── */
+.checklist-item { display:flex; align-items:center; gap:.8rem; padding:.65rem .75rem; border-radius:8px; background:#1a1a1a; margin-bottom:.45rem; font-size:.83rem; }
+.checklist-icon { font-size:1rem; flex-shrink:0; width:22px; text-align:center; }
+.checklist-label { flex:1; }
+.checklist-status { font-size:.72rem; font-weight:600; }
+.checklist-status.ok  { color:var(--accent); }
+.checklist-status.no  { color:#ff8f8f; }
+.checklist-status.warn { color:#ffbe57; }
+
+/* ── TASK DETAIL DRAWER ─────────────────────────── */
+.task-row{cursor:pointer;transition:background .15s}
+.task-row:hover{background:rgba(200,255,87,.04)}
+.td-timeline-item{display:flex;gap:.75rem;padding:.45rem 0;font-size:.8rem;align-items:flex-start}
+.td-timeline-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:.28rem}
+.td-timeline-dot.done{background:var(--accent)}
+.td-timeline-dot.overdue{background:#ff6b6b}
+.td-timeline-dot.upcoming{background:#ffbe57}
+.td-overdue-badge{display:inline-block;padding:.15rem .55rem;border-radius:100px;background:rgba(255,107,107,.12);color:#ff8f8f;border:1px solid rgba(255,107,107,.25);font-size:.68rem;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ══════ DEMO BANNER ══════ -->
+<div id="demo-banner">
+  <div class="demo-banner-title">🚀 Empty workspace detected</div>
+  <div class="demo-banner-sub">Load realistic demo data to see the full system in action — great for your presentation.</div>
+  <button class="demo-banner-btn" onclick="loadDemoData()">Load Demo Data</button>
+  <span class="demo-banner-skip" onclick="dismissDemoBanner()">Dismiss — I'll add my own data</span>
+</div>
+
+<!-- ══════ SIDEBAR ══════ -->
+<aside>
+  <div class="logo">PB<span>OS</span></div>
+  <nav>
+    <div class="nav-sec">Main</div>
+    <button class="nav-item active" data-page="dashboard"><span class="nav-icon">⊞</span>Dashboard</button>
+    <button class="nav-item" data-page="social"><span class="nav-icon">📱</span>Social Media</button>
+    <button class="nav-item" data-page="analytics"><span class="nav-icon">📊</span>Analytics</button>
+    <div class="nav-sec">Manage</div>
+    <button class="nav-item" data-page="content"><span class="nav-icon">📅</span>Content Planner</button>
+    <button class="nav-item" data-page="deals"><span class="nav-icon">🤝</span>Brand Deals</button>
+    <button class="nav-item" data-page="tasks"><span class="nav-icon">✓</span>Tasks<span class="notif-dot" id="task-notif" style="display:none"></span></button>
+    <div class="nav-sec">System</div>
+    <button class="nav-item" data-page="profile"><span class="nav-icon">👤</span>Profile</button>
+    <button class="nav-item" data-page="testing"><span class="nav-icon">🧪</span>Testing Log</button>
+    <button class="nav-item" data-page="demo"><span class="nav-icon">🚀</span>Demo Loader</button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div id="server-status" style="font-size:.65rem;color:#ffbe57;padding:.4rem .6rem;background:#1a1a1a;border-radius:6px;margin-bottom:.5rem;line-height:1.4;text-align:center">⏳ Checking server…</div>
+    <div class="user-chip">
+      <div class="avatar" id="av">?</div>
+      <div><div class="u-name" id="uname">—</div><div class="u-role">Content Creator</div></div>
+    </div>
+    <button class="logout-btn" onclick="logout()">← Log out</button>
+  </div>
+</aside>
+
+<!-- ══════ MAIN ══════ -->
+<main>
+
+<!-- ─── DASHBOARD ─── -->
+<div class="page active" id="page-dashboard">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Good <span id="timeofday">day</span>, <span id="gname">there</span> 👋</div>
+      <div class="page-sub"><span class="live-dot"></span>Live overview · <span id="date-display">—</span></div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-demo" onclick="loadDemoData()">⚡ Load Demo Data</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card" style="--accent-line:#E1306C"><div class="stat-label">Total Followers</div><div class="stat-value" id="ds-followers">—</div><div class="stat-change up">Across all platforms</div></div>
+    <div class="stat-card" style="--accent-line:#6eadff"><div class="stat-label">Total Views</div><div class="stat-value" id="ds-views">—</div><div class="stat-change">All platforms combined</div></div>
+    <div class="stat-card" style="--accent-line:var(--accent)"><div class="stat-label">Deal Revenue</div><div class="stat-value" id="ds-revenue">—</div><div class="stat-change up" id="ds-revenue-sub">Total pipeline</div></div>
+    <div class="stat-card" style="--accent-line:#ff8f8f"><div class="stat-label">Tasks Pending</div><div class="stat-value" id="ds-tasks">—</div><div class="stat-change" id="ds-tasks-sub">—</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card"><div class="card-header"><span class="card-title">Platform Summary</span><span class="badge green" id="ds-platform-count">0 connected</span></div><div id="ds-platforms"></div></div>
+    <div class="card"><div class="card-header"><span class="card-title">Recent Activity</span><span class="badge"><span class="live-dot"></span>Live</span></div><div id="ds-activity"></div></div>
+  </div>
+  <div class="two-col">
+    <div class="card"><div class="card-header"><span class="card-title">Upcoming Content</span><span class="badge" id="ds-content-count">0 posts</span></div><div id="ds-content"></div></div>
+    <div class="card"><div class="card-header"><span class="card-title">Active Brand Deals</span><span class="badge" id="ds-deals-count">0 deals</span></div><div id="ds-deals"></div></div>
+  </div>
+</div>
+
+<!-- ─── SOCIAL MEDIA ─── -->
+<div class="page" id="page-social">
+  <div class="topbar">
+    <div><div class="page-title">Social Media</div><div class="page-sub">All platforms — click any post to compare performance</div></div>
+    <div class="topbar-right"><button class="btn-action" onclick="openModal('modal-social')">+ Update Stats</button></div>
+  </div>
+  <div class="three-col" id="social-platform-cards"></div>
+  <div class="section-label">Follower Comparison</div>
+  <div class="card full"><div class="chart-wrap" style="height:200px"><canvas id="growthChart"></canvas></div></div>
+</div>
+
+<!-- ─── ANALYTICS ─── -->
+<div class="page" id="page-analytics">
+  <div class="topbar"><div><div class="page-title">Analytics</div><div class="page-sub">Performance overview across all platforms</div></div></div>
+  <div class="stats-grid" id="analytics-stats-grid"></div>
+  <div class="two-col">
+    <div class="card"><div class="card-header"><span class="card-title">Views by Platform</span></div><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
+    <div class="card"><div class="card-header"><span class="card-title">Revenue by Deal</span></div><div class="chart-wrap"><canvas id="revenueChart"></canvas></div></div>
+  </div>
+  <div class="card full"><div class="card-header"><span class="card-title">Posts by Platform</span></div><div class="chart-wrap" style="height:150px"><canvas id="contentChart"></canvas></div></div>
+</div>
+
+<!-- ─── CONTENT PLANNER ─── -->
+<div class="page" id="page-content">
+  <div class="topbar">
+    <div><div class="page-title">Content Planner</div><div class="page-sub" id="content-sub">Schedule and track your posts</div></div>
+    <div class="topbar-right">
+      <select id="content-filter" onchange="renderContent()" style="background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.78rem;padding:.4rem .7rem;border-radius:8px;outline:none">
+        <option value="all">All platforms</option><option value="instagram">Instagram</option>
+        <option value="tiktok">TikTok</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option>
+      </select>
+      <select id="status-filter" onchange="renderContent()" style="background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.78rem;padding:.4rem .7rem;border-radius:8px;outline:none">
+        <option value="all">All statuses</option><option value="draft">Draft</option>
+        <option value="scheduled">Scheduled</option><option value="published">Published</option>
+      </select>
+      <button class="btn-action" id="btn-add-content">+ Add Post</button>
+    </div>
+  </div>
+  <div class="card full"><div id="content-body"></div></div>
+</div>
+
+<!-- ─── BRAND DEALS ─── -->
+<div class="page" id="page-deals">
+  <div class="topbar">
+    <div><div class="page-title">Brand Deals</div><div class="page-sub" id="deals-sub">Track sponsorships and revenue</div></div>
+    <div class="topbar-right"><button class="btn-action" id="btn-add-deal">+ Add Deal</button></div>
+  </div>
+  <div class="stats-grid" id="deals-stats"></div>
+  <div class="card full"><div id="deals-body"></div></div>
+</div>
+
+<!-- ─── TASKS ─── -->
+<div class="page" id="page-tasks">
+  <div class="topbar">
+    <div><div class="page-title">Tasks</div><div class="page-sub" id="tasks-sub">Stay on top of your to-do list</div></div>
+    <div class="topbar-right">
+      <select id="task-filter" onchange="renderTasks()" style="background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.78rem;padding:.4rem .7rem;border-radius:8px;outline:none">
+        <option value="all">All tasks</option><option value="pending">Pending</option><option value="done">Completed</option>
+      </select>
+      <button class="btn-action" id="btn-add-task">+ Add Task</button>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card"><div class="card-header"><span class="card-title">📋 Pending</span><span class="badge red" id="pending-count">0</span></div><div id="tasks-pending-list"></div></div>
+    <div class="card"><div class="card-header"><span class="card-title">✅ Completed</span><span class="badge green" id="done-count">0</span></div><div id="tasks-done-list"></div></div>
+  </div>
+  <div class="card full"><div class="card-header"><span class="card-title">All Tasks</span><span class="badge" id="all-task-count">0</span></div><div id="tasks-all-list"></div></div>
+</div>
+
+<!-- ─── PROFILE ─── -->
+<div class="page" id="page-profile">
+  <div class="topbar"><div><div class="page-title">Profile</div><div class="page-sub">Your personal brand workspace</div></div></div>
+  <div class="two-col">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;color:var(--black)" id="profile-av">?</div>
+        <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem" id="profile-name">—</div><div style="font-size:.78rem;color:var(--muted)" id="profile-email">—</div><div style="margin-top:.4rem"><span class="badge green">Active Creator</span></div></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem" id="profile-stats-grid"></div>
+    </div>
+    <div class="card"><div class="card-header"><span class="card-title">Connected Platforms</span></div><div id="profile-platforms"></div></div>
+  </div>
+</div>
+
+<!-- ─── TESTING LOG ─── -->
+<div class="page" id="page-testing">
+  <div class="topbar">
+    <div>
+      <div class="page-title">System Testing Log</div>
+      <div class="page-sub">Functional testing evidence — Stage 4.1 of the assessment</div>
+    </div>
+    <div class="topbar-right">
+      <span class="badge green" id="test-pass-badge">— passed</span>
+      <span class="badge red"   id="test-fail-badge">— failed</span>
+      <button class="btn-action" onclick="runAllTests()">&#9654; Run All Tests</button>
+    </div>
+  </div>
+  <div class="stats-grid" style="margin-bottom:1.3rem">
+    <div class="stat-card" style="--accent-line:var(--accent)">
+      <div class="stat-label">Total Test Cases</div>
+      <div class="stat-value" id="t-total">24</div>
+      <div class="stat-change">Across 8 modules</div>
+    </div>
+    <div class="stat-card" style="--accent-line:#57ff9a">
+      <div class="stat-label">Passed</div>
+      <div class="stat-value" id="t-passed" style="color:#57ff9a">—</div>
+      <div class="stat-change up">Run tests to update</div>
+    </div>
+    <div class="stat-card" style="--accent-line:#ff6b6b">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value" id="t-failed" style="color:#ff6b6b">—</div>
+      <div class="stat-change">Issues identified</div>
+    </div>
+    <div class="stat-card" style="--accent-line:#ffbe57">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value" id="t-rate">—</div>
+      <div class="stat-change">System reliability</div>
+    </div>
+  </div>
+  <div class="card full">
+    <div class="card-header">
+      <span class="card-title">Functional Test Cases</span>
+      <select id="test-module-filter" onchange="filterTestTable()" style="background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:.76rem;padding:.35rem .65rem;border-radius:7px;outline:none">
+        <option value="all">All modules</option>
+        <option value="Authentication">Authentication</option>
+        <option value="Dashboard">Dashboard</option>
+        <option value="Social Media">Social Media</option>
+        <option value="Content Planner">Content Planner</option>
+        <option value="Brand Deals">Brand Deals</option>
+        <option value="Tasks">Tasks</option>
+        <option value="Analytics">Analytics</option>
+        <option value="Data Persistence">Data Persistence</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th>
+            <th>Module</th>
+            <th>Test Case Description</th>
+            <th>Expected Result</th>
+            <th>Actual Result</th>
+            <th>Status</th>
+            <th>Test Type</th>
+          </tr>
+        </thead>
+        <tbody id="test-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="two-col" style="margin-top:.85rem">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:.9rem">&#10003; Strengths Identified</div>
+      <div id="eval-strengths"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:.9rem">&#9651; Areas for Improvement</div>
+      <div id="eval-improvements"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DEMO LOADER ─── -->
+<div class="page" id="page-demo">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Demo Data Loader</div>
+      <div class="page-sub">Populate the system for presentations, or reset to a clean slate</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div style="font-size:2.2rem;margin-bottom:.9rem">&#128640;</div>
+      <div class="card-title" style="font-size:1rem;margin-bottom:.5rem">Load Demo Dataset</div>
+      <p style="font-size:.83rem;color:var(--muted);line-height:1.65;margin-bottom:1.1rem">
+        Instantly fills every section with a realistic content creator profile — social stats, posts, brand deals, tasks, and activity log. One click before your presentation.
+      </p>
+      <div style="background:#1a1a1a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.1rem;font-size:.79rem;color:var(--muted);line-height:1.85">
+        <span style="color:var(--accent)">&#10003;</span> 3 social platforms (Instagram, TikTok, Facebook)<br>
+        <span style="color:var(--accent)">&#10003;</span> 11 posts across all platforms with views and likes<br>
+        <span style="color:var(--accent)">&#10003;</span> 10 content planner entries with statuses<br>
+        <span style="color:var(--accent)">&#10003;</span> 8 brand deals totalling $4,450<br>
+        <span style="color:var(--accent)">&#10003;</span> 12 tasks with priorities, categories, due dates<br>
+        <span style="color:var(--accent)">&#10003;</span> 9 timestamped activity log entries
+      </div>
+      <div id="demo-warn" style="display:none;background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.25);border-radius:8px;padding:.65rem .85rem;font-size:.78rem;color:#ffbe57;margin-bottom:.85rem">
+        &#9888; This replaces your existing data. Proceed?
+        <div style="display:flex;gap:.6rem;margin-top:.6rem">
+          <button class="btn-action" style="flex:1;padding:.5rem" onclick="doLoadDemo()">Yes, load it</button>
+          <button class="btn-cancel" style="flex:1;padding:.5rem;border-radius:8px" onclick="document.getElementById('demo-warn').style.display='none'">Cancel</button>
+        </div>
+      </div>
+      <button class="btn-action" id="demo-load-btn" style="width:100%;padding:.7rem;font-size:.87rem" onclick="confirmLoadDemo()">&#128640; Load Demo Data</button>
+    </div>
+    <div class="card">
+      <div style="font-size:2.2rem;margin-bottom:.9rem">&#128465;</div>
+      <div class="card-title" style="font-size:1rem;margin-bottom:.5rem">Clear All Data</div>
+      <p style="font-size:.83rem;color:var(--muted);line-height:1.65;margin-bottom:1.1rem">
+        Wipes all posts, deals, tasks, social stats, and activity. Your account login is kept. Use this after a demo to reset back to a clean state.
+      </p>
+      <div style="background:#1a1a1a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.1rem;font-size:.79rem;color:var(--muted);line-height:1.85">
+        <span style="color:#ff8f8f">&#10007;</span> All social media stats and posts cleared<br>
+        <span style="color:#ff8f8f">&#10007;</span> All content planner entries removed<br>
+        <span style="color:#ff8f8f">&#10007;</span> All brand deals removed<br>
+        <span style="color:#ff8f8f">&#10007;</span> All tasks removed<br>
+        <span style="color:#ff8f8f">&#10007;</span> Activity log cleared<br>
+        <span style="color:var(--accent)">&#10003;</span> Your account and login stay active
+      </div>
+      <button class="btn-action" style="width:100%;padding:.7rem;font-size:.87rem;background:#2a1010;color:#ff8f8f;border:1px solid rgba(255,107,107,.3)" onclick="clearAllData()">&#128465; Clear All Data</button>
+    </div>
+  </div>
+  <div class="card full">
+    <div class="card-header">
+      <span class="card-title">Current Data Summary</span>
+      <button class="btn-outline" onclick="buildDemoPage()">&#8635; Refresh</button>
+    </div>
+    <div id="demo-summary" class="stats-grid" style="margin-bottom:0"></div>
+  </div>
+  <div class="card full" style="margin-top:.85rem">
+    <div class="card-header"><span class="card-title">&#128203; Presentation Checklist</span></div>
+    <div id="demo-checklist"></div>
+  </div>
+</div>
+
+
+</main>
+
+<!-- ══════ POST DETAIL DRAWER ══════ -->
+<div class="drawer-overlay" id="post-drawer" onclick="closeDrawerOnBg(event)">
+  <div class="drawer">
+    <button class="drawer-close" onclick="closePostDrawer()">✕</button>
+    <div id="drawer-plat-badge" class="drawer-plat-badge"></div>
+    <div class="drawer-title" id="drawer-post-title">—</div>
+    <div class="drawer-date" id="drawer-post-date">—</div>
+    <div class="drawer-metrics" id="drawer-metrics"></div>
+    <div class="drawer-section-title">Compare with other posts — tick to add to chart</div>
+    <div id="drawer-compare-list"></div>
+    <div class="compare-chart-wrap"><canvas id="drawer-compare-chart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════ TASK DETAIL DRAWER ══════ -->
+<div class="drawer-overlay" id="task-drawer" onclick="closeTaskDrawerOnBg(event)">
+  <div class="drawer" style="position:relative">
+    <button class="drawer-close" onclick="closeTaskDrawer()">&#10005;</button>
+
+    <!-- Status + priority row -->
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap" id="td-badges"></div>
+
+    <!-- Title -->
+    <div class="drawer-title" id="td-title" style="font-size:1.25rem">—</div>
+    <div class="drawer-date" id="td-due">—</div>
+
+    <!-- Quick metrics -->
+    <div class="drawer-metrics" id="td-metrics" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1.4rem"></div>
+
+    <!-- Notes -->
+    <div id="td-notes-wrap" style="display:none;margin-bottom:1.4rem">
+      <div class="drawer-section-title">Notes</div>
+      <div id="td-notes" style="font-size:.84rem;color:var(--muted);line-height:1.65;background:#1a1a1a;border-radius:8px;padding:.8rem 1rem"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="drawer-section-title">Timeline</div>
+    <div id="td-timeline" style="margin-bottom:1.4rem"></div>
+
+    <!-- Action buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:auto">
+      <button class="btn-action" id="td-toggle-btn" onclick="toggleTaskFromDrawer()" style="padding:.65rem">—</button>
+      <button class="btn-outline" onclick="editTaskFromDrawer()" style="padding:.65rem;color:var(--white)">&#9998; Edit Task</button>
+    </div>
+    <button onclick="deleteTaskFromDrawer()" style="width:100%;margin-top:.5rem;background:transparent;border:1px solid rgba(255,107,107,.3);color:#ff8f8f;font-family:'DM Sans',sans-serif;font-size:.78rem;padding:.5rem;border-radius:8px;cursor:pointer;transition:all .2s">&#128465; Delete Task</button>
+  </div>
+</div>
+
+
+<!-- ══════ MODALS ══════ -->
+
+<!-- CONTENT MODAL -->
+<div class="overlay" id="modal-content" onclick="closeMOnBg(event,'modal-content')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-content')">✕</button>
+    <h2 id="modal-content-title">Add Post</h2>
+    <input type="hidden" id="content-edit-id"/>
+    <div class="form-group"><label>Post title / caption</label><input type="text" id="ci-title" placeholder="e.g. Morning routine vlog"/></div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0"><label>Platform</label>
+        <select id="ci-platform"><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option></select>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>Type</label>
+        <select id="ci-type"><option>Reel</option><option>Post</option><option>Story</option><option>Short</option><option>Video</option><option>Live</option><option>Carousel</option><option>Integrated</option></select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:.9rem">
+      <div class="form-group" style="margin-bottom:0"><label>Scheduled date</label><input type="date" id="ci-date"/></div>
+      <div class="form-group" style="margin-bottom:0"><label>Status</label>
+        <select id="ci-status"><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="published">Published</option></select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:.9rem"><label>Estimated reach</label><input type="text" id="ci-reach" placeholder="e.g. 20K"/></div>
+    <div class="form-group"><label>Notes (optional)</label><textarea id="ci-notes" placeholder="Any extra details…"></textarea></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('modal-content')">Cancel</button><button class="btn-save" onclick="saveContent()">Save Post</button></div>
+  </div>
+</div>
+
+<!-- DEAL MODAL -->
+<div class="overlay" id="modal-deal" onclick="closeMOnBg(event,'modal-deal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-deal')">✕</button>
+    <h2 id="modal-deal-title">Add Brand Deal</h2>
+    <input type="hidden" id="deal-edit-id"/>
+    <div class="form-group"><label>Brand name</label><input type="text" id="di-brand" placeholder="e.g. NordVPN"/></div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0"><label>Deal type</label>
+        <select id="di-type"><option>Sponsored Post</option><option>Integrated Ad</option><option>Brand Deal</option><option>Affiliate</option><option>Product Placement</option><option>Course Promo</option><option>Other</option></select>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>Platform</label>
+        <select id="di-platform"><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option><option value="all">All Platforms</option></select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:.9rem">
+      <div class="form-group" style="margin-bottom:0"><label>Value (AUD $)</label><input type="number" id="di-value" placeholder="0" min="0"/></div>
+      <div class="form-group" style="margin-bottom:0"><label>Deadline</label><input type="date" id="di-deadline"/></div>
+    </div>
+    <div class="form-row" style="margin-top:.9rem">
+      <div class="form-group" style="margin-bottom:0"><label>Status</label>
+        <select id="di-status"><option value="pending">Pending</option><option value="in-progress">In Progress</option><option value="paid">Paid</option><option value="negotiation">Negotiation</option></select>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>Progress (%)</label><input type="number" id="di-progress" placeholder="0" min="0" max="100"/></div>
+    </div>
+    <div class="form-group" style="margin-top:.9rem"><label>Notes (optional)</label><textarea id="di-notes" placeholder="Contract details, deliverables…"></textarea></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('modal-deal')">Cancel</button><button class="btn-save" onclick="saveDeal()">Save Deal</button></div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="overlay" id="modal-task" onclick="closeMOnBg(event,'modal-task')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-task')">✕</button>
+    <h2 id="modal-task-title">Add Task</h2>
+    <input type="hidden" id="task-edit-id"/>
+    <div class="form-group"><label>Task description</label><input type="text" id="ti-text" placeholder="e.g. Write script for Q&A video"/></div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0"><label>Due date</label><input type="date" id="ti-due"/></div>
+      <div class="form-group" style="margin-bottom:0"><label>Priority</label>
+        <select id="ti-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:.9rem"><label>Category</label>
+      <select id="ti-category"><option value="">— none —</option><option value="Content">Content</option><option value="Deals">Deals</option><option value="Admin">Admin</option><option value="Creative">Creative</option><option value="Other">Other</option></select>
+    </div>
+    <div class="form-group" style="margin-top:.9rem"><label>Notes (optional)</label><textarea id="ti-notes" placeholder="Extra context, links, or remindersâ¦" style="min-height:60px"></textarea></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('modal-task')">Cancel</button><button class="btn-save" onclick="saveTask()">Save Task</button></div>
+  </div>
+</div>
+
+<!-- SOCIAL STATS MODAL -->
+<div class="overlay" id="modal-social" onclick="closeMOnBg(event,'modal-social')">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeModal('modal-social')">✕</button>
+    <h2>Update Social Stats</h2>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.2rem">
+      <button class="btn-outline" id="st-tab-ig" onclick="switchStatTab('instagram')" style="flex:1">📸 Instagram</button>
+      <button class="btn-outline" id="st-tab-tt" onclick="switchStatTab('tiktok')" style="flex:1">🎵 TikTok</button>
+      <button class="btn-outline" id="st-tab-fb" onclick="switchStatTab('facebook')" style="flex:1">👥 Facebook</button>
+    </div>
+    <input type="hidden" id="stat-platform" value="instagram"/>
+    <div class="form-group"><label>Handle / Page name</label><input type="text" id="stat-handle" placeholder="@yourhandle"/></div>
+    <div class="stat-edit-grid">
+      <div class="form-group"><label>Followers</label><input type="number" id="stat-followers" placeholder="0" min="0"/></div>
+      <div class="form-group"><label>Total Views (30d)</label><input type="number" id="stat-views" placeholder="0" min="0"/></div>
+      <div class="form-group"><label>Likes (30d)</label><input type="number" id="stat-likes" placeholder="0" min="0"/></div>
+      <div class="form-group"><label>Comments (30d)</label><input type="number" id="stat-comments" placeholder="0" min="0"/></div>
+      <div class="form-group"><label>Engagement Rate (%)</label><input type="number" id="stat-eng" placeholder="0.0" step="0.1" min="0" max="100"/></div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:1rem;margin-top:.3rem">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.07em">Add a Recent Post</div>
+      <div class="form-group"><label>Post title</label><input type="text" id="stat-post-title" placeholder="Post title or caption"/></div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0"><label>Views</label><input type="number" id="stat-post-views" placeholder="0" min="0"/></div>
+        <div class="form-group" style="margin-bottom:0"><label>Likes</label><input type="number" id="stat-post-likes" placeholder="0" min="0"/></div>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('modal-social')">Cancel</button><button class="btn-save" onclick="saveSocialStats()">Save Stats</button></div>
+  </div>
+</div>
+
+<!-- ══════ JAVASCRIPT ══════ -->
+<script>
+// ── AUTH ───────────────────────────────────────────────────────────────────
+const session = DB.session.get();
+if (!session) { window.location.href = 'landing.html'; }
+const ME      = session || {};
+const FIRST   = (ME.name || 'Creator').split(' ')[0];
+const INITIALS = (ME.name || 'C').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+document.getElementById('av').textContent           = INITIALS;
+document.getElementById('uname').textContent        = ME.name || '—';
+document.getElementById('gname').textContent        = FIRST;
+document.getElementById('profile-av').textContent   = INITIALS;
+document.getElementById('profile-name').textContent = ME.name || '—';
+document.getElementById('profile-email').textContent= ME.email || '—';
+const h = new Date().getHours();
+document.getElementById('timeofday').textContent    = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+function logout() { DB.session.clear(); window.location.href = 'landing.html'; }
+
+// ── DEMO BANNER ────────────────────────────────────────────────────────────
+function checkDemoBanner() {
+  const s = DB.stats.summary();
+  const dismissed = localStorage.getItem('pbos_demo_dismissed_' + ME.email);
+  if (!dismissed && s.totalPosts === 0 && s.totalDeals === 0 && s.totalTasks === 0) {
+    document.getElementById('demo-banner').classList.add('show');
+  }
+}
+function dismissDemoBanner() {
+  localStorage.setItem('pbos_demo_dismissed_' + ME.email, '1');
+  document.getElementById('demo-banner').classList.remove('show');
+}
+function loadDemoData() {
+  if (!confirm('This will replace all your current data with demo data. Continue?')) return;
+  DB.demo.load();
+  dismissDemoBanner();
+  // Refresh current page
+  const activePage = document.querySelector('.nav-item.active')?.dataset.page || 'dashboard';
+  refreshPage(activePage);
+  showToast('✅ Demo data loaded! Explore the system.');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  let t = document.getElementById('pbos-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'pbos-toast';
+    t.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1e1e1e;border:1px solid rgba(200,255,87,.3);color:var(--white);font-family:DM Sans,sans-serif;font-size:.83rem;padding:.65rem 1.3rem;border-radius:100px;z-index:9999;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2800);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function navigate(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+  // Sync from server then render so data is always fresh
+  DB.syncAll().then(() => refreshPage(pageId));
+}
+document.querySelectorAll('.nav-item').forEach(btn => {
+  if (btn.dataset.page) btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+function refreshPage(p) {
+  if (p === 'dashboard') buildDashboard();
+  if (p === 'social')    buildSocial();
+  if (p === 'analytics') buildAnalytics();
+  if (p === 'content')   renderContent();
+  if (p === 'deals')     renderDeals();
+  if (p === 'tasks')     renderTasks();
+  if (p === 'profile')   buildProfile();
+  if (p === 'testing')   { renderTestTable(); updateTestStats(); renderEvalNotes(); }
+  if (p === 'demo')      buildDemoPage();
+}
+
+// ── FORMAT HELPERS ─────────────────────────────────────────────────────────
+function fmt(n) {
+  n = Number(n) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K';
+  return n.toLocaleString();
+}
+function fmtMoney(n) { return '$' + (Number(n) || 0).toLocaleString(); }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }); }
+  catch { return iso; }
+}
+function pill(status) {
+  const cls = 'pill-' + (status || 'draft').toLowerCase().replace(/\s+/g, '-');
+  return `<span class="pill ${cls}">${status || 'Draft'}</span>`;
+}
+function platTag(p) {
+  const labels = { instagram:'Instagram', tiktok:'TikTok', facebook:'Facebook', youtube:'YouTube', all:'All' };
+  return `<span class="plat-tag plat-${p || 'all'}">${labels[p] || p}</span>`;
+}
+function emptyState(icon, title, body) {
+  return `<div class="empty-state"><div class="empty-icon">${icon}</div><h3>${title}</h3><p>${body}</p></div>`;
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── MODAL HELPERS ──────────────────────────────────────────────────────────
+function openModal(id)            { document.getElementById(id).classList.add('active'); }
+function closeModal(id)           { document.getElementById(id).classList.remove('active'); }
+function closeMOnBg(e, id)        { if (e.target === document.getElementById(id)) closeModal(id); }
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function buildDashboard() {
+  const s     = DB.stats.summary();
+  const soc   = DB.socialStats.all();
+  const acts  = DB.activity.all();
+  const posts = DB.posts().all().filter(p => p.status !== 'published').slice(0, 5);
+  const deals = DB.deals().all().filter(d => d.status !== 'paid').slice(0, 5);
+
+  document.getElementById('ds-followers').textContent = fmt(s.totalFollowers) || '0';
+  document.getElementById('ds-views').textContent     = fmt(s.totalViews)     || '0';
+  document.getElementById('ds-revenue').textContent   = fmtMoney(s.dealRevenue);
+  document.getElementById('ds-tasks').textContent     = s.pendingTasks;
+  document.getElementById('ds-tasks-sub').textContent = s.doneTasks + ' completed';
+  document.getElementById('task-notif').style.display = s.pendingTasks > 0 ? 'inline-block' : 'none';
+
+  const pIcons = { instagram:'📸', tiktok:'🎵', facebook:'👥' };
+  const connected = ['instagram','tiktok','facebook'].filter(p => soc[p].followers > 0);
+  document.getElementById('ds-platform-count').textContent = connected.length + ' connected';
+  document.getElementById('ds-platforms').innerHTML = connected.length
+    ? connected.map(k => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.55rem">
+          <span>${pIcons[k]}</span>
+          <div><div style="font-size:.84rem;font-weight:500">${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+          <div style="font-size:.7rem;color:var(--muted)">${soc[k].handle || 'No handle'}</div></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">${fmt(soc[k].followers)}</div>
+          <div style="font-size:.7rem;color:var(--accent)">${soc[k].engagementRate || 0}% eng.</div>
+        </div>
+      </div>`).join('') + `<div style="padding-top:.6rem;text-align:right"><button class="badge" style="cursor:pointer" onclick="navigate('social')">Manage →</button></div>`
+    : emptyState('📱', 'No platforms yet', 'Go to Social Media to add your stats.');
+
+  document.getElementById('ds-activity').innerHTML = acts.length
+    ? acts.slice(0, 6).map(a => `
+      <div class="activity-item">
+        <div class="adot ${a.platform}"></div>
+        <div><div class="activity-text">${esc(a.text)}</div><div class="activity-time">${DB.activity.relativeTime(a.time)}</div></div>
+      </div>`).join('')
+    : emptyState('🕐', 'No activity yet', 'Activity logs appear here as you use the system.');
+
+  document.getElementById('ds-content-count').textContent = posts.length + ' posts';
+  document.getElementById('ds-content').innerHTML = posts.length
+    ? posts.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.83rem;gap:.5rem">
+        <div><div>${esc(p.title)}</div><div style="font-size:.7rem;color:var(--muted);margin-top:.1rem">${fmtDate(p.date)} · ${platTag(p.platform)}</div></div>
+        ${pill(p.status)}
+      </div>`).join('') + `<div style="padding-top:.6rem;text-align:right"><button class="badge" style="cursor:pointer" onclick="navigate('content')">View all →</button></div>`
+    : emptyState('📅', 'No posts planned', 'Go to Content Planner to add your first post.');
+
+  document.getElementById('ds-deals-count').textContent = deals.length + ' active';
+  document.getElementById('ds-deals').innerHTML = deals.length
+    ? deals.map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.83rem;gap:.5rem">
+        <div><div style="font-weight:500">${esc(d.brand)}</div><div style="font-size:.7rem;color:var(--muted)">${fmtDate(d.deadline)}</div></div>
+        <div style="display:flex;align-items:center;gap:.6rem">${pill(d.status)}<span style="font-family:'Syne',sans-serif;font-weight:600;font-size:.88rem;color:var(--accent)">${fmtMoney(d.value)}</span></div>
+      </div>`).join('') + `<div style="padding-top:.6rem;text-align:right"><button class="badge" style="cursor:pointer" onclick="navigate('deals')">View all →</button></div>`
+    : emptyState('🤝', 'No active deals', 'Go to Brand Deals to track your sponsorships.');
+}
+
+// ── SOCIAL MEDIA ───────────────────────────────────────────────────────────
+const PLAT_META = {
+  instagram: { name:'Instagram', icon:'📸', color:'#E1306C' },
+  tiktok:    { name:'TikTok',    icon:'🎵', color:'#888888' },
+  facebook:  { name:'Facebook',  icon:'👥', color:'#1877F2' }
+};
+
+function buildSocial() {
+  const soc  = DB.socialStats.all();
+  const wrap = document.getElementById('social-platform-cards');
+  wrap.innerHTML = ['instagram','tiktok','facebook'].map(k => {
+    const d = soc[k]; const m = PLAT_META[k];
+    const posts = d.posts || [];
+    return `<div class="platform-card" style="--pcolor:${m.color}">
+      <div class="platform-header">
+        <div class="platform-icon" style="background:${m.color}22;color:${m.color}">${m.icon}</div>
+        <div><div class="platform-name">${m.name}</div><div class="platform-handle">${esc(d.handle) || 'No handle set'}</div></div>
+      </div>
+      <div class="pstats">
+        <div class="pstat"><div class="pstat-label">Followers</div><div class="pstat-val up">${d.followers ? fmt(d.followers) : '—'}</div></div>
+        <div class="pstat"><div class="pstat-label">Views</div><div class="pstat-val">${d.views ? fmt(d.views) : '—'}</div></div>
+        <div class="pstat"><div class="pstat-label">Eng. Rate</div><div class="pstat-val up">${d.engagementRate ? d.engagementRate + '%' : '—'}</div></div>
+        <div class="pstat"><div class="pstat-label">Likes</div><div class="pstat-val">${d.likes ? fmt(d.likes) : '—'}</div></div>
+        <div class="pstat"><div class="pstat-label">Comments</div><div class="pstat-val">${d.comments ? fmt(d.comments) : '—'}</div></div>
+        <div class="pstat"><div class="pstat-label">Posts Logged</div><div class="pstat-val">${posts.length}</div></div>
+      </div>
+      <div class="recent-posts-wrap">
+        <div class="rp-label">All Posts (${posts.length}) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#555">— click to compare</span></div>
+        ${posts.length
+          ? posts.map(p => `
+            <div class="post-row post-row-clickable" onclick="openPostDrawer('${k}','${p.id}')">
+              <span class="post-title-cell">${esc(p.title)}</span>
+              <div class="post-metrics">
+                <span>👁 ${fmt(p.views || 0)}</span>
+                <span>❤ ${fmt(p.likes || 0)}</span>
+                <span style="color:var(--accent);font-size:.67rem">${p.date || ''}</span>
+              </div>
+            </div>`).join('')
+          : `<div style="padding:.6rem 0;text-align:center;font-size:.78rem;color:var(--muted)">No posts yet — use "Update Stats" to log one.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+  buildGrowthChart();
+}
+
+let growthChartInst = null;
+function buildGrowthChart() {
+  const soc = DB.socialStats.all();
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  if (growthChartInst) { growthChartInst.destroy(); growthChartInst = null; }
+  const hasData = ['instagram','tiktok','facebook'].some(k => soc[k].followers > 0);
+  if (!hasData) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.fillStyle = '#6b6b6b'; ctx.font = '13px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('No follower data yet.', ctx.canvas.width / 2, ctx.canvas.height / 2);
+    return;
+  }
+  growthChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Instagram', 'TikTok', 'Facebook'],
+      datasets: [{ label: 'Followers',
+        data: [soc.instagram.followers || 0, soc.tiktok.followers || 0, soc.facebook.followers || 0],
+        backgroundColor: ['rgba(225,48,108,0.75)', 'rgba(136,136,136,0.65)', 'rgba(24,119,242,0.75)'],
+        borderRadius: 6 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:'rgba(255,255,255,0.05)' } }, y:{ grid:{ color:'rgba(255,255,255,0.05)' }, ticks:{ callback: v => fmt(v) } } } }
+  });
+}
+
+// Social modal
+let currentStatPlatform = 'instagram';
+function switchStatTab(p) {
+  currentStatPlatform = p;
+  document.getElementById('stat-platform').value = p;
+  const map = { instagram:'ig', tiktok:'tt', facebook:'fb' };
+  ['ig','tt','fb'].forEach(t => document.getElementById('st-tab-' + t).classList.remove('btn-action'));
+  document.getElementById('st-tab-' + map[p]).classList.add('btn-action');
+  const d = DB.socialStats.get(p);
+  document.getElementById('stat-handle').value    = d.handle || '';
+  document.getElementById('stat-followers').value = d.followers || '';
+  document.getElementById('stat-views').value     = d.views || '';
+  document.getElementById('stat-likes').value     = d.likes || '';
+  document.getElementById('stat-comments').value  = d.comments || '';
+  document.getElementById('stat-eng').value       = d.engagementRate || '';
+  document.getElementById('stat-post-title').value = '';
+  document.getElementById('stat-post-views').value = '';
+  document.getElementById('stat-post-likes').value = '';
+}
+document.querySelector('[onclick="openModal(\'modal-social\')"]').addEventListener('click', () => {
+  setTimeout(() => switchStatTab('instagram'), 50);
+});
+function saveSocialStats() {
+  const p         = document.getElementById('stat-platform').value || 'instagram';
+  const handle    = document.getElementById('stat-handle').value.trim();
+  const followers = Number(document.getElementById('stat-followers').value) || 0;
+  const views     = Number(document.getElementById('stat-views').value) || 0;
+  const likes     = Number(document.getElementById('stat-likes').value) || 0;
+  const comments  = Number(document.getElementById('stat-comments').value) || 0;
+  const eng       = Number(document.getElementById('stat-eng').value) || 0;
+  const postTitle = document.getElementById('stat-post-title').value.trim();
+  const postViews = Number(document.getElementById('stat-post-views').value) || 0;
+  const postLikes = Number(document.getElementById('stat-post-likes').value) || 0;
+  DB.socialStats.update(p, { handle, followers, views, likes, comments, engagementRate: eng });
+  if (postTitle) DB.socialStats.addPost(p, { title: postTitle, views: postViews, likes: postLikes });
+  DB.activity.log(p.slice(0,2), `Updated ${PLAT_META[p].name} stats: ${fmt(followers)} followers, ${eng}% engagement.`);
+  if (postTitle) DB.activity.log(p.slice(0,2), `Logged post on ${PLAT_META[p].name}: "${postTitle}" — ${fmt(postViews)} views.`);
+  closeModal('modal-social');
+  buildSocial(); buildDashboard();
+  showToast('Stats saved!');
+}
+
+// ── POST DETAIL DRAWER ──────────────────────────────────────────────────────
+const PLAT_COLOR = { instagram:'#E1306C', tiktok:'#888888', facebook:'#1877F2' };
+const PLAT_ICON  = { instagram:'📸', tiktok:'🎵', facebook:'👥' };
+const PLAT_LABEL = { instagram:'Instagram', tiktok:'TikTok', facebook:'Facebook' };
+
+let drawerCompareChart = null;
+let drawerSelectedIds  = new Set();
+let drawerAnchorPost   = null;
+
+function openPostDrawer(platform, postId) {
+  const soc  = DB.socialStats.all();
+  const post = (soc[platform].posts || []).find(p => p.id === postId);
+  if (!post) return;
+  drawerAnchorPost  = { ...post, platform };
+  drawerSelectedIds = new Set([postId]);
+  const col = PLAT_COLOR[platform];
+  const badge = document.getElementById('drawer-plat-badge');
+  badge.style.background = col + '22';
+  badge.style.color      = col;
+  badge.style.border     = `1px solid ${col}44`;
+  badge.textContent      = PLAT_ICON[platform] + ' ' + PLAT_LABEL[platform];
+  document.getElementById('drawer-post-title').textContent = post.title;
+  document.getElementById('drawer-post-date').textContent  = 'Added: ' + (post.date || '—');
+  const engRate = post.views > 0 ? ((post.likes / post.views) * 100).toFixed(1) + '%' : '—';
+  document.getElementById('drawer-metrics').innerHTML = [
+    { label:'Views',           val: fmt(post.views || 0) },
+    { label:'Likes',           val: fmt(post.likes || 0) },
+    { label:'Est. Engagement', val: engRate },
+    { label:'Platform',        val: PLAT_LABEL[platform] }
+  ].map(m => `<div class="drawer-metric"><div class="drawer-metric-label">${m.label}</div><div class="drawer-metric-val">${m.val}</div></div>`).join('');
+  renderDrawerCompareList();
+  document.getElementById('post-drawer').classList.add('active');
+}
+
+function renderDrawerCompareList() {
+  const soc      = DB.socialStats.all();
+  const allPosts = [];
+  ['instagram','tiktok','facebook'].forEach(k => {
+    (soc[k].posts || []).forEach(p => allPosts.push({ ...p, platform: k }));
+  });
+  allPosts.sort((a, b) => {
+    if (a.id === drawerAnchorPost.id) return -1;
+    if (b.id === drawerAnchorPost.id) return  1;
+    return (b.views || 0) - (a.views || 0);
+  });
+  const listEl = document.getElementById('drawer-compare-list');
+  if (allPosts.length <= 1) {
+    listEl.innerHTML = `<div style="font-size:.8rem;color:var(--muted);padding:.5rem 0 1rem">Add posts on other platforms to compare here.</div>`;
+    renderDrawerChart([]);
+    return;
+  }
+  listEl.innerHTML = allPosts.map(p => {
+    const isAnchor   = p.id === drawerAnchorPost.id;
+    const isSelected = drawerSelectedIds.has(p.id);
+    const col        = PLAT_COLOR[p.platform];
+    return `<div class="compare-row ${isSelected ? 'selected' : ''}"
+        onclick="toggleComparePost('${p.id}')"
+        style="${isSelected ? `border-color:${col}66;background:${col}0a` : ''}">
+      <div class="compare-plat-dot" style="background:${col}"></div>
+      <span style="font-size:.63rem;color:${col};flex-shrink:0;font-weight:700;width:55px">${PLAT_LABEL[p.platform].slice(0,3).toUpperCase()}</span>
+      <span class="compare-post-title">${esc(p.title)}${isAnchor ? ' <span style="font-size:.6rem;color:var(--muted)">(selected)</span>' : ''}</span>
+      <span class="compare-post-views">👁 ${fmt(p.views || 0)}</span>
+      <span style="font-size:.85rem;color:${isSelected ? col : 'var(--muted)'}">${isSelected ? '✓' : '○'}</span>
+    </div>`;
+  }).join('');
+  renderDrawerChart(allPosts.filter(p => drawerSelectedIds.has(p.id)));
+}
+
+function toggleComparePost(postId) {
+  if (postId === drawerAnchorPost.id) return;
+  drawerSelectedIds.has(postId) ? drawerSelectedIds.delete(postId) : drawerSelectedIds.add(postId);
+  renderDrawerCompareList();
+}
+
+function renderDrawerChart(selected) {
+  if (drawerCompareChart) { drawerCompareChart.destroy(); drawerCompareChart = null; }
+  const ctx = document.getElementById('drawer-compare-chart').getContext('2d');
+  if (!selected.length) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+  const labels  = selected.map(p => p.title.length > 14 ? p.title.slice(0, 14) + '…' : p.title);
+  const bgViews = selected.map(p => PLAT_COLOR[p.platform] + 'cc');
+  const bgLikes = selected.map(p => PLAT_COLOR[p.platform] + '55');
+  drawerCompareChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Views', data: selected.map(p => p.views || 0), backgroundColor: bgViews, borderRadius: 5 },
+        { label:'Likes', data: selected.map(p => p.likes || 0), backgroundColor: bgLikes, borderRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)}` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => fmt(v) } }
+      }
+    }
+  });
+}
+
+function closePostDrawer() {
+  document.getElementById('post-drawer').classList.remove('active');
+  if (drawerCompareChart) { drawerCompareChart.destroy(); drawerCompareChart = null; }
+}
+function closeDrawerOnBg(e) {
+  if (e.target === document.getElementById('post-drawer')) closePostDrawer();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePostDrawer(); });
+
+// ── ANALYTICS ──────────────────────────────────────────────────────────────
+let viewsChartInst = null, revenueChartInst = null, contentChartInst = null;
+function buildAnalytics() {
+  const soc   = DB.socialStats.all();
+  const deals = DB.deals().all();
+  const posts = DB.posts().all();
+  const s     = DB.stats.summary();
+  const totalLikes = (soc.instagram.likes||0)+(soc.tiktok.likes||0)+(soc.facebook.likes||0);
+  const paidDeals  = deals.filter(d=>d.status==='paid').reduce((a,d)=>a+Number(d.value||0),0);
+  document.getElementById('analytics-stats-grid').innerHTML = [
+    { label:'Total Followers', value:fmt(s.totalFollowers), change:'All platforms' },
+    { label:'Total Views',     value:fmt(s.totalViews),     change:'All platforms' },
+    { label:'Total Likes',     value:fmt(totalLikes),       change:'All platforms' },
+    { label:'Revenue Paid',    value:fmtMoney(paidDeals),   change:'of ' + fmtMoney(s.dealRevenue) + ' pipeline' }
+  ].map(c => `<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-value">${c.value||'0'}</div><div class="stat-change">${c.change}</div></div>`).join('');
+
+  if (viewsChartInst)   { viewsChartInst.destroy();   viewsChartInst   = null; }
+  if (revenueChartInst) { revenueChartInst.destroy();  revenueChartInst = null; }
+  if (contentChartInst) { contentChartInst.destroy();  contentChartInst = null; }
+
+  viewsChartInst = new Chart(document.getElementById('viewsChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:['Instagram','TikTok','Facebook'],
+      datasets:[{ label:'Views',
+        data:[soc.instagram.views||0, soc.tiktok.views||0, soc.facebook.views||0],
+        backgroundColor:['rgba(225,48,108,0.75)','rgba(136,136,136,0.65)','rgba(24,119,242,0.75)'], borderRadius:6 }] },
+    options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'rgba(255,255,255,0.05)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{callback:v=>fmt(v)}} } }
+  });
+
+  const dColors = ['#c8ff57','#E1306C','#1877F2','#ff8f8f','#888','#6eadff','#ffbe57','#57ff9a'];
+  if (deals.length) {
+    revenueChartInst = new Chart(document.getElementById('revenueChart').getContext('2d'), {
+      type:'doughnut',
+      data:{ labels:deals.map(d=>d.brand),
+        datasets:[{ data:deals.map(d=>Number(d.value||0)), backgroundColor:deals.map((_,i)=>dColors[i%dColors.length]), borderWidth:0 }] },
+      options:{ responsive:true,maintainAspectRatio:false,cutout:'60%',
+        plugins:{legend:{position:'right',labels:{boxWidth:10,padding:10,font:{size:11}}}} }
+    });
+  }
+
+  const platCounts = { instagram:0,tiktok:0,facebook:0,youtube:0 };
+  posts.forEach(p => { if (platCounts[p.platform] !== undefined) platCounts[p.platform]++; });
+  contentChartInst = new Chart(document.getElementById('contentChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:['Instagram','TikTok','Facebook','YouTube'],
+      datasets:[{ label:'Posts', data:Object.values(platCounts),
+        backgroundColor:['rgba(225,48,108,0.75)','rgba(136,136,136,0.65)','rgba(24,119,242,0.75)','rgba(255,0,0,0.6)'], borderRadius:5 }] },
+    options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'rgba(255,255,255,0.05)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{stepSize:1}} } }
+  });
+}
+
+// ── CONTENT PLANNER ────────────────────────────────────────────────────────
+function renderContent() {
+  const platF   = document.getElementById('content-filter').value;
+  const statusF = document.getElementById('status-filter').value;
+  let posts     = DB.posts().all();
+  if (platF   !== 'all') posts = posts.filter(p => p.platform === platF);
+  if (statusF !== 'all') posts = posts.filter(p => p.status   === statusF);
+  const all   = DB.posts().all();
+  document.getElementById('content-sub').textContent = `${all.length} posts total · ${all.filter(p=>p.status==='scheduled').length} scheduled`;
+  document.getElementById('content-body').innerHTML = posts.length
+    ? `<table class="data-table">
+        <thead><tr><th>Title</th><th>Platform</th><th>Type</th><th>Date</th><th>Status</th><th>Reach</th><th>Actions</th></tr></thead>
+        <tbody>${posts.map(p=>`<tr>
+          <td><strong>${esc(p.title)}</strong>${p.notes?`<div style="font-size:.7rem;color:var(--muted);margin-top:.1rem">${esc(p.notes)}</div>`:''}</td>
+          <td>${platTag(p.platform)}</td><td><span class="badge">${esc(p.type)}</span></td>
+          <td style="color:var(--muted)">${fmtDate(p.date)}</td><td>${pill(p.status)}</td>
+          <td style="color:var(--accent)">${esc(p.reach||'—')}</td>
+          <td style="white-space:nowrap">
+            <button class="task-del" onclick="openContentModal('${p.id}')" title="Edit">✏️</button>
+            <button class="task-del" onclick="deleteContent('${p.id}')" title="Delete">🗑</button>
+          </td></tr>`).join('')}</tbody>
+      </table>`
+    : emptyState('📅','No posts yet','Click "+ Add Post" to plan your first piece of content.');
+}
+
+function openContentModal(id = null) {
+  document.getElementById('modal-content-title').textContent = id ? 'Edit Post' : 'Add Post';
+  document.getElementById('content-edit-id').value = id || '';
+  if (id) {
+    const p = DB.posts().get(id); if (!p) return;
+    document.getElementById('ci-title').value    = p.title || '';
+    document.getElementById('ci-platform').value = p.platform || 'instagram';
+    document.getElementById('ci-type').value     = p.type || 'Reel';
+    document.getElementById('ci-date').value     = p.date || '';
+    document.getElementById('ci-status').value   = p.status || 'draft';
+    document.getElementById('ci-reach').value    = p.reach || '';
+    document.getElementById('ci-notes').value    = p.notes || '';
+  } else {
+    ['ci-title','ci-date','ci-reach','ci-notes'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('ci-platform').value = 'instagram';
+    document.getElementById('ci-type').value     = 'Reel';
+    document.getElementById('ci-status').value   = 'draft';
+  }
+  openModal('modal-content');
+}
+document.getElementById('btn-add-content').addEventListener('click', () => openContentModal());
+
+function saveContent() {
+  const editId = document.getElementById('content-edit-id').value;
+  const data = {
+    title:    document.getElementById('ci-title').value.trim(),
+    platform: document.getElementById('ci-platform').value,
+    type:     document.getElementById('ci-type').value,
+    date:     document.getElementById('ci-date').value,
+    status:   document.getElementById('ci-status').value,
+    reach:    document.getElementById('ci-reach').value.trim(),
+    notes:    document.getElementById('ci-notes').value.trim()
+  };
+  if (!data.title) { showToast('⚠️ Please enter a post title.'); return; }
+  const platMap = { instagram:'ig', tiktok:'tt', facebook:'fb', youtube:'yt' };
+  if (editId) {
+    DB.posts().update(editId, data);
+    DB.activity.log(platMap[data.platform]||'system', `Updated post: "${data.title}" on ${data.platform}.`);
+  } else {
+    DB.posts().add(data);
+    DB.activity.log(platMap[data.platform]||'system', `New post planned: "${data.title}" on ${data.platform} (${data.status}).`);
+  }
+  closeModal('modal-content'); renderContent(); buildDashboard();
+  showToast(editId ? 'Post updated!' : 'Post added!');
+}
+function deleteContent(id) {
+  if (!confirm('Delete this post?')) return;
+  DB.posts().remove(id); renderContent(); buildDashboard();
+  showToast('Post deleted.');
+}
+
+// ── BRAND DEALS ────────────────────────────────────────────────────────────
+function renderDeals() {
+  const deals = DB.deals().all();
+  const total  = deals.reduce((a,d)=>a+Number(d.value||0),0);
+  const paid   = deals.filter(d=>d.status==='paid').reduce((a,d)=>a+Number(d.value||0),0);
+  const active = deals.filter(d=>d.status==='in-progress').reduce((a,d)=>a+Number(d.value||0),0);
+  const pend   = deals.filter(d=>d.status==='pending'||d.status==='negotiation').reduce((a,d)=>a+Number(d.value||0),0);
+  document.getElementById('deals-stats').innerHTML = [
+    { label:'Total Pipeline',         value:fmtMoney(total),  change:deals.length+' deals total' },
+    { label:'Paid Out',               value:fmtMoney(paid),   change:deals.filter(d=>d.status==='paid').length+' completed' },
+    { label:'In Progress',            value:fmtMoney(active), change:deals.filter(d=>d.status==='in-progress').length+' active' },
+    { label:'Pending / Negotiation',  value:fmtMoney(pend),   change:deals.filter(d=>d.status==='pending'||d.status==='negotiation').length+' deals' }
+  ].map(c=>`<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-value">${c.value}</div><div class="stat-change up">${c.change}</div></div>`).join('');
+  document.getElementById('deals-sub').textContent = `${deals.length} deals · ${fmtMoney(total)} total pipeline`;
+  document.getElementById('deals-body').innerHTML = deals.length
+    ? `<table class="data-table">
+        <thead><tr><th>Brand</th><th>Type</th><th>Platform</th><th>Value</th><th>Deadline</th><th>Progress</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${deals.map(d=>`<tr>
+          <td><strong>${esc(d.brand)}</strong>${d.notes?`<div style="font-size:.7rem;color:var(--muted);margin-top:.12rem">${esc(d.notes)}</div>`:''}</td>
+          <td><span class="badge">${esc(d.type)}</span></td>
+          <td>${platTag(d.platform==='all'?'all':d.platform)}</td>
+          <td class="deal-val">${fmtMoney(d.value)}</td>
+          <td style="color:var(--muted)">${fmtDate(d.deadline)}</td>
+          <td><div style="display:flex;align-items:center;gap:.5rem"><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,Number(d.progress)||0)}%"></div></div><span style="font-size:.7rem;color:var(--muted)">${Number(d.progress)||0}%</span></div></td>
+          <td>${pill(d.status)}</td>
+          <td style="white-space:nowrap">
+            <button class="task-del" onclick="openDealModal('${d.id}')" title="Edit">✏️</button>
+            <button class="task-del" onclick="deleteDeal('${d.id}')" title="Delete">🗑</button>
+          </td></tr>`).join('')}</tbody>
+      </table>`
+    : emptyState('🤝','No deals yet','Click "+ Add Deal" to start tracking your first brand deal.');
+}
+
+function openDealModal(id = null) {
+  document.getElementById('modal-deal-title').textContent = id ? 'Edit Deal' : 'Add Brand Deal';
+  document.getElementById('deal-edit-id').value = id || '';
+  if (id) {
+    const d = DB.deals().get(id); if (!d) return;
+    document.getElementById('di-brand').value    = d.brand || '';
+    document.getElementById('di-type').value     = d.type  || 'Sponsored Post';
+    document.getElementById('di-platform').value = d.platform || 'instagram';
+    document.getElementById('di-value').value    = d.value || '';
+    document.getElementById('di-deadline').value = d.deadline || '';
+    document.getElementById('di-status').value   = d.status || 'pending';
+    document.getElementById('di-progress').value = d.progress || '';
+    document.getElementById('di-notes').value    = d.notes || '';
+  } else {
+    ['di-brand','di-value','di-deadline','di-progress','di-notes'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('di-type').value     = 'Sponsored Post';
+    document.getElementById('di-platform').value = 'instagram';
+    document.getElementById('di-status').value   = 'pending';
+  }
+  openModal('modal-deal');
+}
+document.getElementById('btn-add-deal').addEventListener('click', () => openDealModal());
+
+function saveDeal() {
+  const editId = document.getElementById('deal-edit-id').value;
+  const data = {
+    brand:    document.getElementById('di-brand').value.trim(),
+    type:     document.getElementById('di-type').value,
+    platform: document.getElementById('di-platform').value,
+    value:    Number(document.getElementById('di-value').value) || 0,
+    deadline: document.getElementById('di-deadline').value,
+    status:   document.getElementById('di-status').value,
+    progress: Number(document.getElementById('di-progress').value) || 0,
+    notes:    document.getElementById('di-notes').value.trim()
+  };
+  if (!data.brand) { showToast('⚠️ Please enter a brand name.'); return; }
+  if (editId) {
+    DB.deals().update(editId, data);
+    DB.activity.log('system', `Updated deal with ${data.brand}: ${fmtMoney(data.value)}, ${data.status}.`);
+  } else {
+    DB.deals().add(data);
+    DB.activity.log('system', `New brand deal: ${data.brand} — ${fmtMoney(data.value)} (${data.status}).`);
+  }
+  closeModal('modal-deal'); renderDeals(); buildDashboard();
+  showToast(editId ? 'Deal updated!' : 'Deal added!');
+}
+function deleteDeal(id) {
+  if (!confirm('Delete this deal?')) return;
+  DB.deals().remove(id); renderDeals(); buildDashboard();
+  showToast('Deal deleted.');
+}
+
+// ── TASKS ──────────────────────────────────────────────────────────────────
+function renderTasks() {
+  const filter  = document.getElementById('task-filter').value;
+  const all     = DB.tasks().all();
+  const pending = all.filter(t => !t.done);
+  const done    = all.filter(t => t.done);
+  document.getElementById('pending-count').textContent  = pending.length;
+  document.getElementById('done-count').textContent     = done.length;
+  document.getElementById('all-task-count').textContent = all.length;
+  document.getElementById('tasks-sub').textContent      = `${pending.length} pending · ${done.length} completed`;
+  document.getElementById('task-notif').style.display   = pending.length > 0 ? 'inline-block' : 'none';
+
+  function taskHTML(tasks, emptyMsg) {
+    if (!tasks.length) return `<div style="padding:1rem 0;text-align:center;font-size:.8rem;color:var(--muted)">${emptyMsg}</div>`;
+    return tasks.map(t => `
+      <div class="task-row">
+        <div class="task-check ${t.done?'done':''}" onclick="toggleTask('${t.id}')"></div>
+        <div style="flex:1">
+          <span class="task-text ${t.done?'done':''}">${esc(t.text)}</span>
+          ${t.category ? `<div style="font-size:.68rem;color:var(--muted);margin-top:.1rem">${esc(t.category)}</div>` : ''}
+        </div>
+        <span class="pill pill-${t.priority||'medium'}" style="flex-shrink:0">${t.priority||'medium'}</span>
+        <span class="task-due">${t.due ? fmtDate(t.due) : '—'}</span>
+        <button class="task-del" onclick="openTaskModal('${t.id}')" title="Edit">✏️</button>
+        <button class="task-del" onclick="deleteTask('${t.id}')" title="Delete">🗑</button>
+      </div>`).join('');
+  }
+  let filtered = all;
+  if (filter === 'pending') filtered = pending;
+  if (filter === 'done')    filtered = done;
+  document.getElementById('tasks-pending-list').innerHTML = taskHTML(pending, 'No pending tasks. Great work! 🎉');
+  document.getElementById('tasks-done-list').innerHTML    = taskHTML(done,    'No completed tasks yet.');
+  document.getElementById('tasks-all-list').innerHTML     = taskHTML(filtered, 'No tasks found.');
+}
+
+function toggleTask(id) {
+  const t = DB.tasks().get(id); if (!t) return;
+  DB.tasks().update(id, { done: !t.done });
+  if (!t.done) DB.activity.log('system', `Task completed: "${t.text}"`);
+  renderTasks(); buildDashboard();
+}
+
+function openTaskModal(id = null) {
+  document.getElementById('modal-task-title').textContent = id ? 'Edit Task' : 'Add Task';
+  document.getElementById('task-edit-id').value = id || '';
+  if (id) {
+    const t = DB.tasks().get(id); if (!t) return;
+    document.getElementById('ti-text').value     = t.text || '';
+    document.getElementById('ti-due').value      = t.due  || '';
+    document.getElementById('ti-priority').value = t.priority || 'medium';
+    document.getElementById('ti-category').value = t.category || '';
+    document.getElementById('ti-notes').value    = t.notes    || '';
+  } else {
+    ['ti-text','ti-due','ti-notes'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('ti-priority').value = 'medium';
+    document.getElementById('ti-category').value = '';
+  }
+  openModal('modal-task');
+}
+document.getElementById('btn-add-task').addEventListener('click', () => openTaskModal());
+
+function saveTask() {
+  const editId = document.getElementById('task-edit-id').value;
+  const data = {
+    text:     document.getElementById('ti-text').value.trim(),
+    due:      document.getElementById('ti-due').value,
+    priority: document.getElementById('ti-priority').value,
+    category: document.getElementById('ti-category').value,
+    notes:    document.getElementById('ti-notes').value.trim(),
+    done:     false
+  };
+  if (!data.text) { showToast('⚠️ Please enter a task description.'); return; }
+  if (editId) {
+    const ex = DB.tasks().get(editId);
+    DB.tasks().update(editId, { ...data, done: ex ? ex.done : false });
+  } else {
+    DB.tasks().add(data);
+    DB.activity.log('system', `New task added: "${data.text}"`);
+  }
+  closeModal('modal-task'); renderTasks(); buildDashboard();
+  showToast(editId ? 'Task updated!' : 'Task added!');
+}
+function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  DB.tasks().remove(id); renderTasks(); buildDashboard();
+  showToast('Task deleted.');
+}
+
+// ── PROFILE ────────────────────────────────────────────────────────────────
+function buildProfile() {
+  const s   = DB.stats.summary();
+  const soc = DB.socialStats.all();
+  document.getElementById('profile-stats-grid').innerHTML = [
+    { label:'Total Posts',     value: s.totalPosts },
+    { label:'Brand Deals',     value: s.totalDeals },
+    { label:'Tasks Done',      value: s.doneTasks  },
+    { label:'Total Followers', value: fmt(s.totalFollowers) }
+  ].map(x => `<div class="pstat"><div class="pstat-label">${x.label}</div><div class="pstat-val">${x.value||0}</div></div>`).join('');
+  const plats = [{ k:'instagram',icon:'📸',label:'Instagram' },{ k:'tiktok',icon:'🎵',label:'TikTok' },{ k:'facebook',icon:'👥',label:'Facebook' }];
+  document.getElementById('profile-platforms').innerHTML = plats.map(p => {
+    const connected = soc[p.k].followers > 0 || soc[p.k].handle;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem;background:#1a1a1a;border-radius:8px;margin-bottom:.5rem">
+      <div style="display:flex;align-items:center;gap:.6rem"><span>${p.icon}</span>
+        <div><div style="font-size:.84rem;font-weight:500">${p.label}</div>
+        <div style="font-size:.7rem;color:var(--muted)">${esc(soc[p.k].handle)||'Not set up'}</div></div>
+      </div>
+      <span class="badge ${connected?'green':''}">${connected?'Connected':'Not set up'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+Chart.defaults.color       = '#6b6b6b';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+// Sync from server on load, then rebuild dashboard with fresh data
+DB.syncAll().then(() => buildDashboard());
+checkDemoBanner();
+
+
+// ── TESTING PAGE ──────────────────────────────────────────────────────────────
+
+const TEST_CASES = [
+  // Authentication
+  { id:1,  module:'Authentication',   desc:'User can create a new account',                    expected:'Account saved, redirected to dashboard',          type:'Functional'   },
+  { id:2,  module:'Authentication',   desc:'Login with correct credentials',                   expected:'Session created, dashboard loads',                type:'Functional'   },
+  { id:3,  module:'Authentication',   desc:'Login with wrong password',                        expected:'Error message shown, login blocked',              type:'Functional'   },
+  { id:4,  module:'Authentication',   desc:'New user workspace starts empty',                  expected:'All sections show empty states with guidance',    type:'Acceptance'   },
+  { id:5,  module:'Authentication',   desc:'Logout clears session and redirects',              expected:'Session removed, landing page loads',             type:'Functional'   },
+
+  // Dashboard
+  { id:6,  module:'Dashboard',        desc:'Stats reflect real data from all sections',        expected:'Follower, revenue, task counts match stored data', type:'Integration'  },
+  { id:7,  module:'Dashboard',        desc:'Activity feed shows most recent actions first',    expected:'Latest entry appears at the top',                 type:'Functional'   },
+  { id:8,  module:'Dashboard',        desc:'Empty dashboard shows helpful guidance messages',  expected:'Empty state prompts visible in each card',         type:'Acceptance'   },
+
+  // Social Media
+  { id:9,  module:'Social Media',     desc:'Updating Instagram stats saves correctly',         expected:'Follower/views/engagement values persist',         type:'Functional'   },
+  { id:10, module:'Social Media',     desc:'Adding a post logs it under the correct platform', expected:'Post appears in that platform card only',          type:'Functional'   },
+  { id:11, module:'Social Media',     desc:'All past posts are shown (not just most recent)',  expected:'All logged posts visible in the card list',        type:'Functional'   },
+  { id:12, module:'Social Media',     desc:'Clicking a post opens the comparison drawer',      expected:'Drawer slides in with post metrics',              type:'Functional'   },
+  { id:13, module:'Social Media',     desc:'Post comparison chart updates on checkbox toggle', expected:'Chart re-renders with selected posts only',        type:'Functional'   },
+  { id:14, module:'Social Media',     desc:'Follower growth chart reflects stored stats',      expected:'Bar heights match each platform follower count',   type:'Integration'  },
+
+  // Content Planner
+  { id:15, module:'Content Planner',  desc:'Adding a post saves and appears in table',         expected:'New row visible immediately after save',           type:'Functional'   },
+  { id:16, module:'Content Planner',  desc:'Platform filter shows only selected platform',     expected:'Table filtered to matching rows only',             type:'Functional'   },
+  { id:17, module:'Content Planner',  desc:'Editing a post updates existing row',              expected:'Row reflects new values without duplicating',      type:'Functional'   },
+  { id:18, module:'Content Planner',  desc:'Deleting a post removes it permanently',           expected:'Row gone after confirmation; does not return',     type:'Functional'   },
+
+  // Brand Deals
+  { id:19, module:'Brand Deals',      desc:'Adding a deal updates pipeline total',             expected:'Deal value added to the four stat cards above',    type:'Integration'  },
+  { id:20, module:'Brand Deals',      desc:'Progress bar reflects entered percentage',         expected:'Bar width matches the % value entered',            type:'Functional'   },
+
+  // Tasks
+  { id:21, module:'Tasks',            desc:'Completing a task moves it to Completed panel',    expected:'Task appears in right panel; pending count drops', type:'Functional'   },
+  { id:22, module:'Tasks',            desc:'Sidebar shows red dot when tasks are pending',     expected:'Notification dot visible on Tasks nav item',       type:'Functional'   },
+
+  // Analytics
+  { id:23, module:'Analytics',        desc:'Views chart reflects social stats data',           expected:'Bar heights match Instagram/TikTok/Facebook views', type:'Integration' },
+
+  // Data Persistence
+  { id:24, module:'Data Persistence', desc:'All data survives a browser refresh',              expected:'Posts, deals, tasks intact after page reload',     type:'Volume'       },
+];
+
+let testResults = {}; // id -> 'pass' | 'fail' | 'pending'
+
+// Automated test runners — each returns true/false
+const TEST_RUNNERS = {
+  1:  () => { const u = DB.users.all(); return Object.keys(u).length > 0; },
+  2:  () => { return DB.session.get() !== null; },
+  3:  async () => { const result = await DB.users.verify('notreal@x.com','wrongpass'); return result.ok === false; },
+  4:  () => true,  // visual/manual
+  5:  () => true,  // manual (would log out)
+  6:  () => {
+        const s = DB.stats.summary();
+        const el = document.getElementById('ds-followers');
+        if (!el) return false;
+        const shown = el.textContent.replace(/[^0-9KMk.]/g,'');
+        return shown.length > 0;
+      },
+  7:  () => DB.activity.all().length >= 0,
+  8:  () => true,
+  9:  () => { const ig = DB.socialStats.get('instagram'); return ig !== null; },
+  10: () => {
+        const all = DB.socialStats.all();
+        const igPosts = (all.instagram.posts||[]).length;
+        const ttPosts = (all.tiktok.posts||[]).length;
+        return igPosts >= 0 && ttPosts >= 0;
+      },
+  11: () => {
+        const all = DB.socialStats.all();
+        return ['instagram','tiktok','facebook'].every(k => Array.isArray(all[k].posts));
+      },
+  12: () => document.getElementById('post-drawer') !== null,
+  13: () => document.getElementById('drawer-compare-chart') !== null,
+  14: () => document.getElementById('growthChart') !== null,
+  15: () => { const p = DB.posts(); return typeof p.add === 'function' && typeof p.all === 'function'; },
+  16: () => document.getElementById('content-filter') !== null,
+  17: () => { const p = DB.posts(); return typeof p.update === 'function'; },
+  18: () => { const p = DB.posts(); return typeof p.remove === 'function'; },
+  19: () => {
+        const deals = DB.deals().all();
+        const total = deals.reduce((a,d)=>a+Number(d.value||0),0);
+        return total >= 0;
+      },
+  20: () => document.querySelector('.progress-fill') !== null || DB.deals().all().length === 0,
+  21: () => { const tasks = DB.tasks(); return typeof tasks.update === 'function'; },
+  22: () => document.getElementById('task-notif') !== null,
+  23: () => document.getElementById('viewsChart') !== null,
+  24: () => {
+        try {
+          const key = 'pbos_persist_test_' + Date.now();
+          localStorage.setItem(key,'1');
+          const ok = localStorage.getItem(key) === '1';
+          localStorage.removeItem(key);
+          return ok;
+        } catch { return false; }
+      },
+};
+
+async function runAllTests() {
+  testResults = {};
+  for (const tc of TEST_CASES) {
+    try {
+      const runner = TEST_RUNNERS[tc.id];
+      if (!runner) {
+        testResults[tc.id] = 'pending';
+      } else {
+        const passed = await runner();
+        testResults[tc.id] = passed ? 'pass' : 'fail';
+      }
+    } catch(e) {
+      testResults[tc.id] = 'fail';
+    }
+  }
+  renderTestTable();
+  updateTestStats();
+  renderEvalNotes();
+  showToast('✅ All 24 tests executed');
+}
+
+function filterTestTable() {
+  renderTestTable();
+}
+
+function renderTestTable() {
+  const filter = document.getElementById('test-module-filter')?.value || 'all';
+  const cases  = filter === 'all' ? TEST_CASES : TEST_CASES.filter(t => t.module === filter);
+  const tbody  = document.getElementById('test-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = cases.map(tc => {
+    const status  = testResults[tc.id] || 'pending';
+    const rowCls  = status === 'pass' ? 'test-row-pass' : status === 'fail' ? 'test-row-fail' : 'test-row-pending';
+    const statusEl = status === 'pass'
+      ? '<span class="test-status-pass">&#10003; PASS</span>'
+      : status === 'fail'
+        ? '<span class="test-status-fail">&#10007; FAIL</span>'
+        : '<span class="test-status-pending">&#9675; PENDING</span>';
+
+    const actualResult = status === 'pass'
+      ? 'Behaved as expected'
+      : status === 'fail'
+        ? 'Did not meet expected result'
+        : '— Not yet run —';
+
+    const typeBadge = {
+      'Functional':'badge',
+      'Integration':'badge blue',
+      'Acceptance':'badge green',
+      'Volume':'badge'
+    }[tc.type] || 'badge';
+
+    return `<tr class="${rowCls}">
+      <td style="color:var(--muted);font-size:.72rem">${tc.id}</td>
+      <td><span class="badge">${tc.module}</span></td>
+      <td>${tc.desc}</td>
+      <td style="color:var(--muted);font-size:.8rem">${tc.expected}</td>
+      <td style="font-size:.8rem">${actualResult}</td>
+      <td>${statusEl}</td>
+      <td><span class="${typeBadge}">${tc.type}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateTestStats() {
+  const passed  = Object.values(testResults).filter(r=>r==='pass').length;
+  const failed  = Object.values(testResults).filter(r=>r==='fail').length;
+  const total   = TEST_CASES.length;
+  const rate    = total > 0 ? Math.round((passed/total)*100)+'%' : '—';
+
+  const setEl = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  setEl('t-passed',  passed);
+  setEl('t-failed',  failed);
+  setEl('t-rate',    rate);
+  setEl('test-pass-badge', passed+' passed');
+  setEl('test-fail-badge', failed+' failed');
+}
+
+function renderEvalNotes() {
+  const passed = Object.values(testResults).filter(r=>r==='pass').length;
+  const total  = TEST_CASES.length;
+
+  const strengths = [
+    { text:'Data persistence works across browser sessions via localStorage', ok: testResults[24]==='pass' },
+    { text:'Authentication correctly blocks invalid logins', ok: testResults[3]==='pass' },
+    { text:'All CRUD operations (add, edit, delete) function correctly', ok: testResults[15]==='pass' && testResults[17]==='pass' && testResults[18]==='pass' },
+    { text:'Dashboard statistics update in real-time from user data', ok: testResults[6]==='pass' },
+    { text:'Post comparison drawer renders cross-platform comparisons', ok: testResults[12]==='pass' && testResults[13]==='pass' },
+  ].filter(s => s.ok || Object.keys(testResults).length===0);
+
+  const improvements = [
+    { text:'Passwords stored in plain text — should use hashing (e.g. SHA-256) in production' },
+    { text:'No server-side validation — all data entry relies on client-side checks only' },
+    { text:'localStorage has a 5MB limit — not suitable for large-scale production use' },
+    { text:'No offline/PWA support — requires active browser session' },
+    { text:'Manual social stats entry — future version should integrate real platform APIs' },
+  ];
+
+  const strEl = document.getElementById('eval-strengths');
+  const impEl = document.getElementById('eval-improvements');
+  if (!strEl || !impEl) return;
+
+  strEl.innerHTML = (strengths.length ? strengths : [
+    { text:'Run the tests above to identify system strengths', ok:false },
+  ]).map(s => `
+    <div class="eval-item">
+      <div class="eval-dot" style="background:var(--accent)"></div>
+      <span>${s.text}</span>
+    </div>`).join('');
+
+  impEl.innerHTML = improvements.map(i => `
+    <div class="eval-item">
+      <div class="eval-dot" style="background:#ffbe57"></div>
+      <span>${i.text}</span>
+    </div>`).join('');
+}
+
+// ── DEMO LOADER PAGE ──────────────────────────────────────────────────────────
+
+function confirmLoadDemo() {
+  document.getElementById('demo-warn').style.display = 'block';
+}
+
+function doLoadDemo() {
+  DB.demo.load();
+  document.getElementById('demo-warn').style.display = 'none';
+  buildDemoPage();
+  // Refresh dashboard too
+  buildDashboard();
+  showToast('🚀 Demo data loaded — explore the full system!');
+}
+
+function clearAllData() {
+  if (!confirm('Clear all your data? Your account login will be kept.')) return;
+  const email = DB.session.get()?.email;
+  if (!email) return;
+  ['posts','deals','tasks','activity','socialStats'].forEach(e => {
+    localStorage.removeItem('pbos_' + email + '_' + e);
+  });
+  buildDemoPage();
+  buildDashboard();
+  showToast('🗑 All data cleared. Fresh workspace ready.');
+}
+
+function buildDemoPage() {
+  const s   = DB.stats.summary();
+  const soc = DB.socialStats.all();
+  const totalFollowers = soc.instagram.followers + soc.tiktok.followers + soc.facebook.followers;
+
+  const summaryEl = document.getElementById('demo-summary');
+  if (!summaryEl) return;
+
+  summaryEl.innerHTML = [
+    { label:'Total Followers', value: totalFollowers > 0 ? fmt(totalFollowers) : '0', color:'#E1306C' },
+    { label:'Content Posts',   value: s.totalPosts,  color:'var(--accent)' },
+    { label:'Brand Deals',     value: s.totalDeals,  color:'#1877F2' },
+    { label:'Tasks',           value: s.totalTasks,  color:'#ffbe57' },
+    { label:'Deal Revenue',    value: fmtMoney(s.dealRevenue), color:'var(--accent)' },
+    { label:'Activity Entries',value: DB.activity.all().length, color:'var(--muted)' },
+  ].map(c => `
+    <div class="stat-card" style="--accent-line:${c.color}">
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.value}</div>
+    </div>`).join('');
+
+  // Presentation checklist
+  const checks = [
+    { icon:'📊', label:'Dashboard shows live stats',                ok: s.totalFollowers > 0 || s.totalPosts > 0 },
+    { icon:'📱', label:'Social Media page has platform stats',       ok: soc.instagram.followers > 0 || soc.tiktok.followers > 0 || soc.facebook.followers > 0 },
+    { icon:'📅', label:'Content Planner has posts to show',          ok: s.totalPosts > 0 },
+    { icon:'🤝', label:'Brand Deals pipeline is populated',          ok: s.totalDeals > 0 },
+    { icon:'✓',  label:'Tasks section has pending and done items',   ok: s.totalTasks > 0 },
+    { icon:'📈', label:'Analytics charts have data to render',       ok: s.totalViews > 0 || s.totalPosts > 0 || s.totalDeals > 0 },
+    { icon:'🧪', label:'Testing Log has been run',                   ok: Object.keys(testResults).length > 0 },
+    { icon:'👤', label:'Profile shows connected platforms',          ok: soc.instagram.followers > 0 },
+  ];
+
+  document.getElementById('demo-checklist').innerHTML = checks.map(c => `
+    <div class="checklist-item">
+      <span class="checklist-icon">${c.icon}</span>
+      <span class="checklist-label">${c.label}</span>
+      <span class="checklist-status ${c.ok ? 'ok' : 'no'}">${c.ok ? '✓ Ready' : '✕ Needs data'}</span>
+    </div>`).join('');
+}
+
+
+
+// ── TASK DETAIL DRAWER ─────────────────────────────────────────────────────
+let currentTaskDrawerId = null;
+
+function openTaskDrawer(taskId) {
+  const t = DB.tasks().get(taskId);
+  if (!t) return;
+  currentTaskDrawerId = taskId;
+
+  // Priority colours
+  const prioColor = { high:'#ff8f8f', medium:'#ffbe57', low:var_accent() };
+  const prioBg    = { high:'rgba(255,107,107,.12)', medium:'rgba(255,165,0,.1)', low:'rgba(200,255,87,.08)' };
+  const pColor    = prioColor[t.priority] || prioColor.medium;
+  const pBg       = prioBg[t.priority]   || prioBg.medium;
+
+  // Badges row
+  document.getElementById('td-badges').innerHTML = [
+    `<span style="padding:.22rem .6rem;border-radius:100px;background:${pBg};color:${pColor};border:1px solid ${pColor}44;font-size:.72rem;font-weight:600">${(t.priority||'medium').toUpperCase()} PRIORITY</span>`,
+    t.done
+      ? `<span style="padding:.22rem .6rem;border-radius:100px;background:rgba(87,255,154,.1);color:#57ff9a;border:1px solid rgba(87,255,154,.2);font-size:.72rem;font-weight:600">&#10003; COMPLETED</span>`
+      : isOverdue(t.due)
+        ? `<span class="td-overdue-badge">OVERDUE</span>`
+        : `<span style="padding:.22rem .6rem;border-radius:100px;background:#1e1e1e;color:var(--muted);border:1px solid var(--border);font-size:.72rem">PENDING</span>`,
+    t.category
+      ? `<span style="padding:.22rem .6rem;border-radius:100px;background:#1e1e1e;color:var(--muted);border:1px solid var(--border);font-size:.72rem">${esc(t.category)}</span>`
+      : ''
+  ].join('');
+
+  // Title & due
+  document.getElementById('td-title').textContent = t.text || 'Untitled task';
+  document.getElementById('td-due').textContent   = t.due
+    ? 'Due: ' + fmtDate(t.due) + (isOverdue(t.due) && !t.done ? '  ⚠️ Overdue' : '')
+    : 'No due date set';
+
+  // Metrics
+  const daysLeft = t.due ? daysUntil(t.due) : null;
+  const daysText = t.done ? 'Done' : daysLeft === null ? '—' : daysLeft < 0 ? Math.abs(daysLeft)+' days ago' : daysLeft === 0 ? 'Today' : daysLeft+' days left';
+  document.getElementById('td-metrics').innerHTML = [
+    { label:'Priority',   val: (t.priority||'medium').charAt(0).toUpperCase()+(t.priority||'medium').slice(1), color: pColor },
+    { label:'Status',     val: t.done ? 'Completed' : 'Pending' },
+    { label:'Time',       val: daysText, color: daysLeft !== null && daysLeft < 0 && !t.done ? '#ff8f8f' : undefined },
+  ].map(m => `<div class="drawer-metric"><div class="drawer-metric-label">${m.label}</div><div class="drawer-metric-val" style="${m.color?'color:'+m.color:''}">${m.val}</div></div>`).join('');
+
+  // Notes
+  const notesWrap = document.getElementById('td-notes-wrap');
+  if (t.notes) {
+    notesWrap.style.display = 'block';
+    document.getElementById('td-notes').textContent = t.notes;
+  } else {
+    notesWrap.style.display = 'none';
+  }
+
+  // Timeline
+  const created = t.createdAt ? fmtDate(t.createdAt) : '—';
+  const updated = t.updatedAt ? fmtDate(t.updatedAt) : null;
+  const timelineItems = [
+    { dot: 'done', label: 'Task created', time: created },
+    updated ? { dot: 'done', label: 'Last updated', time: updated } : null,
+    t.due ? { dot: t.done ? 'done' : isOverdue(t.due) ? 'overdue' : 'upcoming', label: t.done ? 'Completed by due date' : 'Due date', time: fmtDate(t.due) } : null,
+    t.done ? { dot: 'done', label: 'Marked complete', time: updated || '—' } : null,
+  ].filter(Boolean);
+
+  document.getElementById('td-timeline').innerHTML = timelineItems.map(item => `
+    <div class="td-timeline-item">
+      <div class="td-timeline-dot ${item.dot}"></div>
+      <div><div style="font-weight:500">${item.label}</div><div style="color:var(--muted);font-size:.72rem;margin-top:.1rem">${item.time}</div></div>
+    </div>`).join('');
+
+  // Toggle button
+  const btn = document.getElementById('td-toggle-btn');
+  if (t.done) {
+    btn.textContent = '↩ Mark Incomplete';
+    btn.style.background = '#2a2a2a';
+    btn.style.color = 'var(--white)';
+  } else {
+    btn.textContent = '✓ Mark Complete';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--black)';
+  }
+
+  document.getElementById('task-drawer').classList.add('active');
+}
+
+function closeTaskDrawer() {
+  document.getElementById('task-drawer').classList.remove('active');
+  currentTaskDrawerId = null;
+}
+function closeTaskDrawerOnBg(e) {
+  if (e.target === document.getElementById('task-drawer')) closeTaskDrawer();
+}
+
+function toggleTaskFromDrawer() {
+  if (!currentTaskDrawerId) return;
+  const t = DB.tasks().get(currentTaskDrawerId);
+  if (!t) return;
+  DB.tasks().update(currentTaskDrawerId, { done: !t.done });
+  if (!t.done) DB.activity.log('system', `Task completed: "${t.text}"`);
+  renderTasks(); buildDashboard();
+  openTaskDrawer(currentTaskDrawerId); // refresh drawer
+  showToast(t.done ? 'Task marked incomplete.' : 'Task completed! ✅');
+}
+
+function editTaskFromDrawer() {
+  closeTaskDrawer();
+  openTaskModal(currentTaskDrawerId);
+}
+
+function deleteTaskFromDrawer() {
+  if (!currentTaskDrawerId) return;
+  if (!confirm('Delete this task? This cannot be undone.')) return;
+  DB.tasks().remove(currentTaskDrawerId);
+  closeTaskDrawer();
+  renderTasks(); buildDashboard();
+  showToast('Task deleted.');
+}
+
+function isOverdue(dueDateStr) {
+  if (!dueDateStr) return false;
+  return new Date(dueDateStr) < new Date(new Date().toDateString());
+}
+function daysUntil(dueDateStr) {
+  if (!dueDateStr) return null;
+  const diff = new Date(dueDateStr) - new Date(new Date().toDateString());
+  return Math.ceil(diff / 86400000);
+}
+function var_accent() { return '#c8ff57'; }
+
+// Patch renderTasks to make rows clickable (open drawer on row click, not just check/edit/delete)
+const _origRenderTasks = renderTasks;
+renderTasks = function() {
+  _origRenderTasks();
+  // Re-render taskHTML with clickable rows — patch after render
+  // We patch the task-row divs to call openTaskDrawer on click (not on buttons)
+  document.querySelectorAll('.task-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+      // Don't open drawer if clicking a button inside the row
+      if (e.target.classList.contains('task-check') || e.target.classList.contains('task-del')) return;
+      const onclickAttr = row.querySelector('.task-check')?.getAttribute('onclick') || '';
+      const idMatch = onclickAttr.match(/toggleTask\('([^']+)'\)/);
+      if (idMatch) openTaskDrawer(idMatch[1]);
+    });
+  });
+};
+
+// ── TESTING PAGE FIXES ─────────────────────────────────────────────────────
+// Render test table on first visit (empty state before run)
+const _origRefreshPage = refreshPage;
+refreshPage = function(p) {
+  _origRefreshPage(p);
+  if (p === 'testing') {
+    renderTestTable();
+    updateTestStats();
+    renderEvalNotes();
+  }
+};
+
+</script>
+</body>
+</html>

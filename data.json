@@ -1,0 +1,218 @@
+{
+  "users": {
+    "demo@pbos.com": {
+      "name": "Demo Creator",
+      "email": "demo@pbos.com",
+      "passwordHash": "ab77b28592be0b665004aa0b1b2cc95a1c437cedf9cabeecc400526e222e075a",
+      "createdAt": "2026-05-30T00:00:00.000Z"
+    },
+    "sumayyamaqdoom2@gmail.com": {
+      "name": "summi",
+      "email": "sumayyamaqdoom2@gmail.com",
+      "passwordHash": "f17f712dc251d89281da25079dfff4557c3577e9fe206c209ac928eabd9d7279",
+      "createdAt": "2026-05-30T08:02:20.422Z"
+    }
+  },
+  "userData": {
+    "demo@pbos.com": {
+      "posts": [],
+      "deals": [],
+      "tasks": [],
+      "activity": [],
+      "socialStats": {
+        "instagram": {
+          "followers": 0,
+          "views": 0,
+          "likes": 0,
+          "comments": 0,
+          "engagementRate": 0,
+          "handle": "",
+          "posts": []
+        },
+        "tiktok": {
+          "followers": 0,
+          "views": 0,
+          "likes": 0,
+          "comments": 0,
+          "engagementRate": 0,
+          "handle": "",
+          "posts": []
+        },
+        "facebook": {
+          "followers": 0,
+          "views": 0,
+          "likes": 0,
+          "comments": 0,
+          "engagementRate": 0,
+          "handle": "",
+          "posts": []
+        }
+      }
+    },
+    "sumayyamaqdoom2@gmail.com": {
+      "posts": [
+        {
+          "title": "morning_walk",
+          "platform": "instagram",
+          "type": "Reel",
+          "date": "2026-05-01",
+          "status": "published",
+          "reach": "40k",
+          "notes": "momo",
+          "id": "mps2fj91xm7sb",
+          "createdAt": "2026-05-30T08:05:05.461Z"
+        }
+      ],
+      "deals": [
+        {
+          "brand": "Noede",
+          "type": "Sponsored Post",
+          "platform": "instagram",
+          "value": 454,
+          "deadline": "",
+          "status": "pending",
+          "progress": 78,
+          "notes": "mom",
+          "id": "mps2fx5kwtdlt",
+          "createdAt": "2026-05-30T08:05:23.480Z"
+        }
+      ],
+      "tasks": [],
+      "activity": [
+        {
+          "platform": "system",
+          "text": "summi logged in.",
+          "id": "mps2h0j76jb3b",
+          "time": "2026-05-30T08:06:14.515Z",
+          "createdAt": "2026-05-30T08:06:14.515Z"
+        },
+        {
+          "platform": "system",
+          "text": "New brand deal: Noede — $454 (pending).",
+          "id": "mps2fx5w4e691",
+          "time": "2026-05-30T08:05:23.492Z",
+          "createdAt": "2026-05-30T08:05:23.492Z"
+        },
+        {
+          "platform": "ig",
+          "text": "New post planned: \"morning_walk\" on instagram (published).",
+          "id": "mps2fj94tn51f",
+          "time": "2026-05-30T08:05:05.464Z",
+          "createdAt": "2026-05-30T08:05:05.464Z"
+        },
+        {
+          "platform": "fa",
+          "text": "Logged post on Facebook: \"makifb w\" — 8 views.",
+          "id": "mps2en7pw6fr0",
+          "time": "2026-05-30T08:04:23.941Z",
+          "createdAt": "2026-05-30T08:04:23.941Z"
+        },
+        {
+          "platform": "fa",
+          "text": "Updated Facebook stats: 89 followers, 7% engagement.",
+          "id": "mps2en7gjyrl8",
+          "time": "2026-05-30T08:04:23.933Z",
+          "createdAt": "2026-05-30T08:04:23.933Z"
+        },
+        {
+          "platform": "ti",
+          "text": "Logged post on TikTok: \"making lifr miserable\" — 30 views.",
+          "id": "mps2e4jwexhut",
+          "time": "2026-05-30T08:03:59.756Z",
+          "createdAt": "2026-05-30T08:03:59.756Z"
+        },
+        {
+          "platform": "ti",
+          "text": "Updated TikTok stats: 26 followers, 6% engagement.",
+          "id": "mps2e4jpzy4bq",
+          "time": "2026-05-30T08:03:59.749Z",
+          "createdAt": "2026-05-30T08:03:59.749Z"
+        },
+        {
+          "platform": "in",
+          "text": "Logged post on Instagram: \"walking\" — 204 views.",
+          "id": "mps2dg6xyk0w0",
+          "time": "2026-05-30T08:03:28.185Z",
+          "createdAt": "2026-05-30T08:03:28.185Z"
+        },
+        {
+          "platform": "in",
+          "text": "Updated Instagram stats: 58 followers, 0% engagement.",
+          "id": "mps2dg6tobzp9",
+          "time": "2026-05-30T08:03:28.181Z",
+          "createdAt": "2026-05-30T08:03:28.181Z"
+        },
+        {
+          "platform": "system",
+          "text": "Welcome to PBOS, summi! Your workspace is ready.",
+          "id": "mps2bzx13kyz3",
+          "time": "2026-05-30T08:02:20.437Z",
+          "createdAt": "2026-05-30T08:02:20.437Z"
+        },
+        {
+          "id": "mps2bzwmr9cum",
+          "platform": "system",
+          "text": "Welcome to PBOS, summi! Your workspace is ready.",
+          "time": "2026-05-30T08:02:20.422Z",
+          "createdAt": "2026-05-30T08:02:20.422Z"
+        }
+      ],
+      "socialStats": {
+        "instagram": {
+          "followers": 58,
+          "views": 695,
+          "likes": 78,
+          "comments": 5,
+          "engagementRate": 0,
+          "handle": "sumi_mo",
+          "posts": [
+            {
+              "title": "walking",
+              "views": 204,
+              "likes": 40,
+              "id": "mps2dg42q0hs6",
+              "date": "30 May",
+              "addedAt": "2026-05-30T08:03:28.178Z"
+            }
+          ]
+        },
+        "tiktok": {
+          "followers": 26,
+          "views": 26,
+          "likes": 26,
+          "comments": 5,
+          "engagementRate": 6,
+          "handle": "sumi_mo",
+          "posts": [
+            {
+              "title": "making lifr miserable",
+              "views": 30,
+              "likes": 3,
+              "id": "mps2e4jfc5z2e",
+              "date": "30 May",
+              "addedAt": "2026-05-30T08:03:59.740Z"
+            }
+          ]
+        },
+        "facebook": {
+          "followers": 89,
+          "views": 7,
+          "likes": 6,
+          "comments": 9,
+          "engagementRate": 7,
+          "handle": "sumi_mo",
+          "posts": [
+            {
+              "title": "makifb w",
+              "views": 8,
+              "likes": 98,
+              "id": "mps2en782p9bv",
+              "date": "30 May",
+              "addedAt": "2026-05-30T08:04:23.925Z"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
